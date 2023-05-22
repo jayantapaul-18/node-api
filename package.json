@@ -1,6 +1,6 @@
 {
   "name": "node-api",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "NodeJS API using ExpressJS and TS",
   "author": "Jayanta Paul",
   "license": "ISC",
