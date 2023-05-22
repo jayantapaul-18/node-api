@@ -1,0 +1,4 @@
+# Ignore helm-k8:
+build
+helm-k8
+node_modules
