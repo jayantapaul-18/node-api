@@ -1,4 +1,5 @@
 # Ignore helm-k8:
+CHANGELOG.md
 build
 helm-k8
 node_modules

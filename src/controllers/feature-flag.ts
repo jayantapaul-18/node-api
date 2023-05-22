@@ -5,6 +5,23 @@ import dotenv from "dotenv";
 // Load environment variables from .env file
 dotenv.config();
 
+/**
+In this example, we define the FeatureFlag interface to represent each feature flag object,
+which has a name and enabled property. The featureFlags array holds all the available feature flags.
+ * */
+export interface FeatureFlag {
+  name: string;
+  enabled: boolean;
+}
+// A feature flag named "show-feature" that is disabled by default.
+// A feature flag named "hide-feature" that is enabled by default.
+export const featureFlags: FeatureFlag[] = [
+  { name: "new-feature", enabled: true },
+  { name: "show-feature", enabled: false },
+  { name: "hide-feature", enabled: false },
+  // Add more feature flags as needed
+];
+
 // featureAPI post
 const featureAPI = async (
   req: Request,

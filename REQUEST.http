@@ -3,5 +3,5 @@ GET http://localhost:3009/health
 ### 
 GET http://localhost:3009
 ###
-POST http://localhost:3009/feature-flag
+POST http://localhost:3009/feature-api
 ###
