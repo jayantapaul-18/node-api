@@ -1,0 +1,42 @@
+[
+  {
+    "name": "new-feature",
+    "enabled": true,
+    "project": "api",
+    "environment": "prod",
+    "description": "new api",
+    "lastToogle": "2023-05-28T22:31:29.796Z"
+  },
+  {
+    "name": "security-feature",
+    "enabled": true,
+    "project": "dark",
+    "environment": "prod",
+    "description": "dark project",
+    "lastToogle": "2023-05-28T22:31:29.796Z"
+  },
+  {
+    "name": "cicd-feature",
+    "enabled": true,
+    "project": "dark",
+    "environment": "prod",
+    "description": "dark project",
+    "lastToogle": "2023-05-28T22:31:29.796Z"
+  },
+  {
+    "name": "monitoring-feature",
+    "enabled": true,
+    "project": "api",
+    "environment": "prod",
+    "description": "api for auth",
+    "lastToogle": "2023-05-28T22:31:29.796Z"
+  },
+  {
+    "name": "monitoring-feature",
+    "enabled": true,
+    "project": "server",
+    "environment": "local",
+    "description": "node server",
+    "lastToogle": "2023-05-28T22:31:29.796Z"
+  }
+]

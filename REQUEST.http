@@ -1,7 +1,58 @@
 ### health check
-GET http://localhost:3009/health
+GET http://localhost:3009/health HTTP/1.1
 ### 
 GET http://localhost:3009
 ###
 POST http://localhost:3009/feature-api
+###
+POST http://localhost:3009/feature-flags HTTP/1.1
+content-type: application/json
+
+{"featureEnable": true}
+###
+POST http://localhost:3009/feature-flags HTTP/1.1
+content-type: application/json
+
+{"featureEnable": false}
+###
+POST http://localhost:3009/feature-flags HTTP/1.1
+content-type: application/json
+
+{
+    "featureEnable": true,
+    "featureByProject": "dark"
+}
+###
+POST http://localhost:3009/app/v1/create-feature-flag HTTP/1.1
+content-type: application/json
+
+{
+    "name": "api_monitoring",
+    "enabled": false,
+    "project": "dark",
+    "environment": "prod",
+    "description": "This is a dark project with api monitoring flag enabled"
+}
+###
+POST http://localhost:3009/app/v1/read-feature-flag HTTP/1.1
+content-type: application/json
+
+{
+    "name": "api_monitoring",
+    "enabled": true,
+    "project": "dark",
+    "environment": "local"
+}
+###
+POST http://localhost:3009/app/v1/feature-flags HTTP/1.1
+content-type: application/json
+
+{
+    "featureEnable": true,
+    "featureByProject": "dark"
+}
+###
+GET http://localhost:3009/app/v1/read-feature-flag?name=api_monitoring
+###
+GET http://localhost:3009/app/v1/read-feature-flag?name=api_monitoring&enabled=true
 ###
