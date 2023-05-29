@@ -28,10 +28,10 @@ content-type: application/json
 
 {
     "name": "api_monitoring",
-    "enabled": false,
-    "project": "dark",
-    "environment": "prod",
-    "description": "This is a dark project with api monitoring flag enabled"
+    "enabled": true,
+    "project": "apm",
+    "environment": "dev",
+    "description": "This is a apm project with flag enabled"
 }
 ###
 POST http://localhost:3009/app/v1/read-feature-flag HTTP/1.1
@@ -55,4 +55,17 @@ content-type: application/json
 GET http://localhost:3009/app/v1/read-feature-flag?name=api_monitoring
 ###
 GET http://localhost:3009/app/v1/read-feature-flag?name=api_monitoring&enabled=true
+###
+GET http://localhost:3009/app/v1/read-feature-flag?name=graceful_shutdown&enabled=false
+###
+POST http://localhost:3009/app/v1/toggle-feature-flag HTTP/1.1
+content-type: application/json
+
+{
+    "name": "secure_auth",
+    "enabled": false,
+    "project": "security",
+    "environment": "plab",
+    "description": "This is a dark project with secure jwt auth flag disabled"
+}
 ###

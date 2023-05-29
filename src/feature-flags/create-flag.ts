@@ -27,29 +27,39 @@ const createFlag = async (
     const project: string = req.body.project;
     const environment: string = req.body.environment;
     const description: string = req.body.description;
+    // const lastToogle = new Date();
+    const createdAt = new Date();
 
     const client = await PGDB.pool.connect();
-    client.query(
-      "INSERT INTO flags (name, enabled,project,environment,description) VALUES ($1, $2, $3, $4, $5)",
-      [name, enabled, project, environment, description],
-      (err, results): void => {
-        if (err) {
-          if (err.message === "Client has already been connected") {
-            console.log(
-              "Client is already connected. Skipping connection step."
-            );
-            // Insert your data insertion logic here
-          } else {
-            console.error("Error inserting data:", err);
+    try {
+      client.query(
+        "INSERT INTO flags (name, enabled,project,environment,description,createdAt) VALUES ($1, $2, $3, $4, $5, $6)",
+        [name, enabled, project, environment, description, createdAt],
+        (err: any, results: any): void => {
+          if (err) {
+            if (err.message === "Client has already been connected") {
+              console.log(
+                "Client is already connected. Skipping connection step."
+              );
+              res.status(500).send(err);
+            } else {
+              console.error("Error inserting data:", err);
+              res.status(500).send(err);
+            }
+            client.release();
+            console.error("throw error :", err);
+            throw err;
           }
+          // return response
           client.release();
-          throw err;
+          res.status(201).send(results);
         }
-        // return response
-        client.release();
-        res.status(201).send(results);
-      }
-    );
+      );
+    } catch (error) {
+      client.release();
+      console.error("Error --- :", error);
+      res.status(500).send(error);
+    }
   }
 };
 
