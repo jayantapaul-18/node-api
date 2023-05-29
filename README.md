@@ -108,8 +108,12 @@ psql -h localhost -p 5433 -U postgres -d feature_flag
 
 ```
 
-# Git
+## Git
 
 ```bash
+git add .
+npm run commit
+git status
+git push origin main
 git log --oneline --decorate --color
 ```
