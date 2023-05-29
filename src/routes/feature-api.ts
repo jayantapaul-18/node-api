@@ -5,6 +5,8 @@ import getFeature from "../feature-flags/feature-flags";
 import createFlag from "../feature-flags/create-flag";
 import readFlag from "../feature-flags/read-flag";
 import readFlagByQuery from "../feature-flags/get-feature-flag";
+import toggleFlag from "../feature-flags/toggle-flag";
+
 const feature = express.Router();
 
 // Get the value of the feature flag.
@@ -48,5 +50,7 @@ feature.post("/app/v1/create-feature-flag", createFlag.createFlag);
 feature.post("/app/v1/read-feature-flag", readFlag.readFlag);
 /* Connected to PG DB  */
 feature.get("/app/v1/read-feature-flag", readFlagByQuery.readFlagByQuery);
+/* Connected to PG DB  */
+feature.post("/app/v1/toggle-feature-flag", toggleFlag.toggleFlag);
 
 export default feature;

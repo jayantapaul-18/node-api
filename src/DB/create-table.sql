@@ -3,8 +3,8 @@ and an auto-incrementing PRIMARY KEY ID: */
 /* CREATE TABLE  */
 /*#################################################################*/
 CREATE TABLE flags (
-  ID SERIAL PRIMARY KEY,
-  name VARCHAR(30) NOT NULL,
+  ID SERIAL,
+  name VARCHAR(30) PRIMARY KEY,
   enabled BOOLEAN NOT NULL,
   project VARCHAR(30),
   environment VARCHAR(15),
@@ -24,6 +24,8 @@ INSERT INTO flags (name, enabled)
 SELECT * FROM flags;
 SELECT * FROM flags WHERE name = 'api_monitoring';
 SELECT * FROM flags WHERE name = 'api_monitoring' AND enabled = true;
+/*#################################################################*/
+DELETE FROM flags;
 /*#################################################################*/
 -- Table: public.flags
 
