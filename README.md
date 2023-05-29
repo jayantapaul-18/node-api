@@ -90,3 +90,26 @@ echo http://$NODE_IP:$NODE_PORT
 kubectl expose deployment helm-k8 --name=helm-k8 --port=3009 --target-port=3009
 
 http://192.168.65.4:32694
+
+## DB Setup
+
+```bash
+docker-compose -f docker-compose.yml up
+psql -h localhost -p 5433 -U postgres -W
+CREATE DATABASE feature_flag;
+psql -h localhost -p 5433 -U postgres -d feature_flag
+\conninfo
+\q: Exit psql connection
+\dt: List all tables
+\list: List databases
+\du: List all roles
+\c: Connect to a new database
+\c feature_flag
+
+```
+
+# Git
+
+```bash
+git log --oneline --decorate --color
+```

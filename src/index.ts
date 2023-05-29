@@ -67,10 +67,10 @@ app.use((req, res, next) => {
 
 // Middleware to check if the feature flag is enabled
 app.use((req, res, next) => {
-  const enableNewFeature = process.env.ENABLE_NEW_FEATURE === "true";
-  log.info(`feature flag - ENABLE_NEW_FEATURE = ${enableNewFeature}`);
+  const enableApi = process.env.DISABLE_FEATURE_API !== "false";
+  log.info(`feature flag - DISABLE_FEATURE_API = ${enableApi}`);
   // Check if the feature flag is enabled
-  if (enableNewFeature) {
+  if (!enableApi) {
     // The feature is enabled, allow access to the new feature
     /** Feature API Routes */
     app.use("/", feature);
@@ -78,8 +78,8 @@ app.use((req, res, next) => {
   } else {
     // The feature is disabled, return a 404 error
     res.status(404).send({
-      featureName: "ENABLE_NEW_FEATURE",
-      status: enableNewFeature,
+      featureName: "DISABLE_FEATURE_API",
+      status: enableApi,
       message: "Feature not available",
     });
   }
@@ -87,7 +87,7 @@ app.use((req, res, next) => {
 
 /** Routes */
 app.use("/", routes);
-
+// app.use("/", feature);
 /** Error handling */
 app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
   if (err instanceof HttpException) {
@@ -96,17 +96,17 @@ app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
   }
   next(err);
 });
-app.use((req: Request, res: Response, next: NextFunction) => {
-  const err = new HttpException(404, "Not Found");
-  // Do something with error here...
-  next(err);
-});
+// app.use((req: Request, res: Response, next: NextFunction) => {
+//   const err = new HttpException(404, "Not Found");
+//   // Do something with error here...
+//   next(err);
+// });
 
 /** API Server */
 const httpServer = http.createServer(app);
 httpServer.listen(PORT, (): void => {
-  console.log(`The server is running on port ${PORT}`);
-  console.log(`> Ready on ${ROOT_URL}`);
+  console.log(`The server ⭕ is running on port ${PORT}`);
+  console.log(`✅> Ready on ${ROOT_URL}`);
   log.info(`The server is running on port ${PORT}`);
 });
 
