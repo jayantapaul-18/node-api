@@ -14,7 +14,7 @@ POST http://localhost:3009/feature-flags HTTP/1.1
 content-type: application/json
 
 {"featureEnable": false}
-###
+### feature-flags
 POST http://localhost:3009/feature-flags HTTP/1.1
 content-type: application/json
 
@@ -22,18 +22,18 @@ content-type: application/json
     "featureEnable": true,
     "featureByProject": "dark"
 }
-###
+### create-feature-flag
 POST http://localhost:3009/app/v1/create-feature-flag HTTP/1.1
 content-type: application/json
 
 {
-    "name": "api_monitoring",
+    "name": "api_monitoring5",
     "enabled": true,
     "project": "apm",
     "environment": "dev",
     "description": "This is a apm project with flag enabled"
 }
-###
+### read-feature-flag
 POST http://localhost:3009/app/v1/read-feature-flag HTTP/1.1
 content-type: application/json
 
@@ -51,13 +51,13 @@ content-type: application/json
     "featureEnable": true,
     "featureByProject": "dark"
 }
-###
+### read-feature-flag?
 GET http://localhost:3009/app/v1/read-feature-flag?name=api_monitoring
-###
+### read-feature-flag?
 GET http://localhost:3009/app/v1/read-feature-flag?name=api_monitoring&enabled=true
-###
+### read-feature-flag?
 GET http://localhost:3009/app/v1/read-feature-flag?name=graceful_shutdown&enabled=false
-###
+### toggle-feature-flag
 POST http://localhost:3009/app/v1/toggle-feature-flag HTTP/1.1
 content-type: application/json
 
