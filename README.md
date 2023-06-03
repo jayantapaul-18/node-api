@@ -108,6 +108,22 @@ psql -h localhost -p 5433 -U postgres -d feature_flag
 
 ```
 
+## .env config
+
+`chmod 777 create_env_start.sh`
+`./create_env_start.sh`
+
+```bash
+#.env file for managing enviornment variable'
+DISABLE_FEATURE_API='false'
+ENABLE_NEW_FEATURE='false'
+DB_HOST='localhost'
+DB_PORT=5433
+DB_DATABASE='feature_flag'
+DB_USER='postgres'
+DB_PASSWORD='my_password'
+```
+
 ## Git
 
 ```bash

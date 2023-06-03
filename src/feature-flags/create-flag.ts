@@ -3,6 +3,7 @@ import axios, { type AxiosResponse } from "axios";
 import {
   types,
   Client,
+  type QueryResult,
   type ClientConfig,
   CustomTypesConfig,
   QueryArrayConfig,
@@ -10,6 +11,7 @@ import {
   DatabaseError,
 } from "pg";
 import PGDB from "../DB/postgres-db";
+
 /* createFlag */
 const createFlag = async (
   req: Request,
@@ -21,44 +23,46 @@ const createFlag = async (
     console.log(req.body);
     res.status(400).json({ error: "Request body is undefined or null" });
   } else {
-    console.log("name: ", req.body.name);
     const name: string = req.body.name;
     const enabled: boolean = req.body.enabled;
     const project: string = req.body.project;
     const environment: string = req.body.environment;
     const description: string = req.body.description;
-    // const lastToogle = new Date();
     const createdAt = new Date();
-
     const client = await PGDB.pool.connect();
+
     try {
-      client.query(
-        "INSERT INTO flags (name, enabled,project,environment,description,createdAt) VALUES ($1, $2, $3, $4, $5, $6)",
-        [name, enabled, project, environment, description, createdAt],
-        (err: any, results: any): void => {
-          if (err) {
-            if (err.message === "Client has already been connected") {
-              console.log(
-                "Client is already connected. Skipping connection step."
-              );
-              res.status(500).send(err);
-            } else {
-              console.error("Error inserting data:", err);
-              res.status(500).send(err);
-            }
-            client.release();
-            console.error("throw error :", err);
-            throw err;
-          }
-          // return response
-          client.release();
-          res.status(201).send(results);
-        }
-      );
-    } catch (error) {
-      client.release();
-      console.error("Error --- :", error);
-      res.status(500).send(error);
+      const query =
+        "INSERT INTO flags (name, enabled,project,environment,description,createdAt) VALUES ($1, $2, $3, $4, $5, $6)";
+      const values = [
+        name,
+        enabled,
+        project,
+        environment,
+        description,
+        createdAt,
+      ];
+      const result: QueryResult = await client.query(query, values);
+      // Check if the insert was successful
+      if (result.rowCount === 1) {
+        console.log("Row inserted successfully for create-feature-flag");
+      }
+      res.status(201).send(result.rows);
+    } catch (err: any) {
+      // If the insert fails, check if the error is a duplicate key violation
+      if (err.code === "23505") {
+        console.log(
+          "Error #23505 - duplicate key value violates unique constraint"
+        );
+        res
+          .status(409)
+          .send({ message: "duplicate key value violates unique constraint" });
+      } else {
+        console.error("Error --- :", err);
+        res.status(500).send({ message: "Internal server error" });
+      }
+    } finally {
+      client.release(); // Release the client back to the pool
     }
   }
 };
