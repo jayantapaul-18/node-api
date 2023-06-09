@@ -1,5 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import axios, { type AxiosResponse } from "axios";
+import log from "../logger/winston-logger";
 import {
   types,
   Client,
@@ -45,6 +46,7 @@ const readFlag = async (
       })
       .catch((error) => {
         console.error("Error:", error);
+        log.error("Error:", error);
         res.status(500).json({
           message: `${error}`,
         });
@@ -68,6 +70,7 @@ async function readData(data: any): Promise<any[]> {
     return results.rows;
   } catch (error: any) {
     console.error("Error retrieving feature flag data:", error);
+    log.error("Error retrieving feature flag data:", error);
     client.release();
     throw error;
   }

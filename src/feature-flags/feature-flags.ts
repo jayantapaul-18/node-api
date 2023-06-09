@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import * as fs from "fs";
 import * as path from "path";
 import moment from "moment";
+import log from "../logger/winston-logger";
 import PGDB from "../DB/postgres-db";
 moment.utc().format();
 // Load environment variables from .env file

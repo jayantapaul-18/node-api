@@ -1,5 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import axios, { type AxiosResponse } from "axios";
+import log from "../logger/winston-logger";
 import {
   types,
   Client,
@@ -46,12 +47,16 @@ const createFlag = async (
       // Check if the insert was successful
       if (result.rowCount === 1) {
         console.log("Row inserted successfully for create-feature-flag");
+        log.info("Row inserted successfully for create-feature-flag");
       }
       res.status(201).send(result.rows);
     } catch (err: any) {
       // If the insert fails, check if the error is a duplicate key violation
       if (err.code === "23505") {
         console.log(
+          "Error #23505 - duplicate key value violates unique constraint"
+        );
+        log.error(
           "Error #23505 - duplicate key value violates unique constraint"
         );
         res
