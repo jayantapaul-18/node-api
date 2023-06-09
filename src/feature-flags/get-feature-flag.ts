@@ -1,5 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import axios, { type AxiosResponse } from "axios";
+import log from "../logger/winston-logger";
 import {
   types,
   Client,
@@ -60,6 +61,7 @@ const readFlagByQuery = async (
   } catch (error) {
     // Handle any errors
     console.error("Error retrieving data:", error);
+    log.error("Error retrieving data: ", error);
     res.status(500).send("Internal server error");
   }
 };

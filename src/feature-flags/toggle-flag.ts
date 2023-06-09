@@ -1,5 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import axios, { type AxiosResponse } from "axios";
+import log from "../logger/winston-logger";
 import {
   types,
   Client,
@@ -42,9 +43,11 @@ const toggleFlag = async (
             console.log(
               "Client is already connected. Skipping connection step."
             );
+            log.error("Client is already connected. Skipping connection step.");
             // Insert your data insertion logic here
           } else {
             console.error("Error updating data:", err);
+            log.error("Error updating data:", err);
           }
           client.release();
           throw err;
