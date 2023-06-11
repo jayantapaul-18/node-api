@@ -27,18 +27,18 @@ POST http://localhost:3009/app/v1/create-feature-flag HTTP/1.1
 content-type: application/json
 
 {
-    "name": "api_monitoring5",
-    "enabled": true,
-    "project": "apm",
-    "environment": "dev",
-    "description": "This is a apm project with flag enabled"
+    "name": "secure_auth",
+    "enabled": false,
+    "project": "security",
+    "environment": "plab",
+    "description": "This is a dark project with secure jwt auth flag disabled"
 }
 ### read-feature-flag
 POST http://localhost:3009/app/v1/read-feature-flag HTTP/1.1
 content-type: application/json
 
 {
-    "name": "api_monitoring",
+    "name": "secure_auth",
     "enabled": true,
     "project": "dark",
     "environment": "local"
@@ -63,9 +63,14 @@ content-type: application/json
 
 {
     "name": "secure_auth",
-    "enabled": false,
+    "enabled": true,
     "project": "security",
     "environment": "plab",
-    "description": "This is a dark project with secure jwt auth flag disabled"
+    "description": "This is a dark project with secure jwt auth flag disabled",
+    "user_name": "admin"
 }
 ###
+GET http://localhost:3009/app/v1/read-feature-flag?name=secure_auth
+
+###
+GET http://localhost:3009/app/v1/toggle-audit
