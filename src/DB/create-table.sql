@@ -26,6 +26,7 @@ SELECT * FROM flags WHERE name = 'api_monitoring';
 SELECT * FROM flags WHERE name = 'api_monitoring' AND enabled = true;
 /*#################################################################*/
 DELETE FROM flags;
+DELETE FROM flags WHERE name = 'api_monitoring5';
 /*#################################################################*/
 -- Table: public.flags
 

@@ -27,11 +27,11 @@ POST http://localhost:3009/app/v1/create-feature-flag HTTP/1.1
 content-type: application/json
 
 {
-    "name": "secure_auth",
-    "enabled": false,
-    "project": "security",
+    "name": "grafana_monitoring",
+    "enabled": true,
+    "project": "observability",
     "environment": "plab",
-    "description": "This is a dark project with secure jwt auth flag disabled"
+    "description": "This is a observability feature"
 }
 ### read-feature-flag
 POST http://localhost:3009/app/v1/read-feature-flag HTTP/1.1
@@ -62,11 +62,11 @@ POST http://localhost:3009/app/v1/toggle-feature-flag HTTP/1.1
 content-type: application/json
 
 {
-    "name": "secure_auth",
+    "name": "api_monitoring3",
     "enabled": true,
-    "project": "security",
-    "environment": "plab",
-    "description": "This is a dark project with secure jwt auth flag disabled",
+    "project": "apm",
+    "environment": "prod",
+    "description": "new apm project",
     "user_name": "admin"
 }
 ###

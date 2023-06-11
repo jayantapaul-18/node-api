@@ -34,13 +34,13 @@ const toggleFlag = async (
     const lastToogle = new Date();
     const updatedAt = new Date();
     const user_name = req.body.user_name;
-    const color = "yellow";
+    const color = "blue";
     const children = `${name} flag set as  ${enabled} by user ${user_name} AT ${updatedAt}`;
-    const dot = "SmileOutlined";
+    const dot = "";
     const client = await PGDB.pool.connect();
     client.query(
-      "UPDATE flags SET name = $1, enabled =$2 , lastToogle = $3 , updatedAt = $4 WHERE name = $1",
-      [name, enabled, lastToogle, updatedAt],
+      "UPDATE flags SET name = $1, enabled =$2 , lastToogle = $3 , updatedAt = $4 , description = $5 WHERE name = $1",
+      [name, enabled, lastToogle, updatedAt, children],
       (err, results): void => {
         if (err) {
           if (err.message === "Client has already been connected") {
