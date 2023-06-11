@@ -50,3 +50,24 @@ TABLESPACE pg_default;
 ALTER TABLE IF EXISTS public.flags
     OWNER to postgres;
 /*#################################################################*/
+/* create DB = feature_flag_audit*/
+CREATE DATABASE feature_flag_audit
+\c feature_flag_audit
+/*#################################################################*/
+/* create feature flag audit*/
+CREATE TABLE flag_audit (
+  ID SERIAL,
+  name VARCHAR(30) NOT NULL,
+  enabled BOOLEAN NOT NULL,
+  user_name VARCHAR(50) NOT NULL,
+  color VARCHAR(10),
+  children VARCHAR(150) NOT NULL,
+  dot VARCHAR(15),
+  environment VARCHAR(15),
+  auditdate DATE NOT NULL
+);
+/*#################################################################*/
+\c feature_flag_audit
+/*#################################################################*/
+DROP TABLE IF EXISTS flag_audit
+/*#################################################################*/

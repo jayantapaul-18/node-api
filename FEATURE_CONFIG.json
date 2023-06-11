@@ -1,18 +1,42 @@
 [
   {
-    "name": "show-feature",
-    "enabled": false,
-    "project": "demo",
+    "name": "new-feature",
+    "enabled": true,
+    "project": "api",
     "environment": "prod",
-    "description": "demo project",
-    "lastToogle": "2023-06-03T06:10:29.245Z"
+    "description": "new api",
+    "lastToogle": "2023-06-10T07:11:30.991Z"
   },
   {
-    "name": "hide-feature",
-    "enabled": false,
+    "name": "security-feature",
+    "enabled": true,
     "project": "dark",
     "environment": "prod",
     "description": "dark project",
-    "lastToogle": "2023-06-03T06:10:29.245Z"
+    "lastToogle": "2023-06-10T07:11:30.991Z"
+  },
+  {
+    "name": "cicd-feature",
+    "enabled": true,
+    "project": "dark",
+    "environment": "prod",
+    "description": "dark project",
+    "lastToogle": "2023-06-10T07:11:30.991Z"
+  },
+  {
+    "name": "monitoring-feature",
+    "enabled": true,
+    "project": "api",
+    "environment": "prod",
+    "description": "api for auth",
+    "lastToogle": "2023-06-10T07:11:30.991Z"
+  },
+  {
+    "name": "monitoring-feature",
+    "enabled": true,
+    "project": "server",
+    "environment": "local",
+    "description": "node server",
+    "lastToogle": "2023-06-10T07:11:30.991Z"
   }
 ]

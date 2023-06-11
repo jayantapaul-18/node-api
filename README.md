@@ -96,6 +96,7 @@ http://192.168.65.4:32694
 ```bash
 docker-compose -f docker-compose.yml up
 psql -h localhost -p 5433 -U postgres -W
+Password: my_password
 CREATE DATABASE feature_flag;
 psql -h localhost -p 5433 -U postgres -d feature_flag
 \conninfo
@@ -106,6 +107,13 @@ psql -h localhost -p 5433 -U postgres -d feature_flag
 \c: Connect to a new database
 \c feature_flag
 
+```
+
+## Audit Logs DB Setup
+
+```bash
+CREATE DATABASE feature_flag_audit
+\c feature_flag_audit
 ```
 
 ## .env config
