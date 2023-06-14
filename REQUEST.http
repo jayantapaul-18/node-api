@@ -74,3 +74,11 @@ GET http://localhost:3009/app/v1/read-feature-flag?name=secure_auth
 
 ###
 GET http://localhost:3009/app/v1/toggle-audit
+### Delete
+DELETE http://localhost:3009/app/v1/delete-feature-flag HTTP/1.1
+content-type: application/json
+
+{
+    "featureName": "api_monitoring2",
+    "environment": "prod"
+}

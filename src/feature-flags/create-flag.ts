@@ -1,16 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
-import axios, { type AxiosResponse } from "axios";
 import log from "../logger/winston-logger";
-import {
-  types,
-  Client,
-  type QueryResult,
-  type ClientConfig,
-  CustomTypesConfig,
-  QueryArrayConfig,
-  Pool,
-  DatabaseError,
-} from "pg";
+import { type QueryResult } from "pg";
 import PGDB from "../DB/postgres-db";
 
 /* createFlag */
@@ -45,9 +35,11 @@ const createFlag = async (
       ];
       const result: QueryResult = await client.query(query, values);
       // Check if the insert was successful
-      if (result.rowCount === 1) {
-        console.log("Row inserted successfully for create-feature-flag");
-        log.info("Row inserted successfully for create-feature-flag");
+      if (result) {
+        console.log(
+          `Row inserted successfully for create-feature-flag: ${name}`
+        );
+        log.info(`Row inserted successfully for create-feature-flag: ${name}`);
       }
       res.status(201).send(result.rows);
     } catch (err: any) {
@@ -63,7 +55,7 @@ const createFlag = async (
           .status(409)
           .send({ message: "duplicate key value violates unique constraint" });
       } else {
-        console.error("Error --- :", err);
+        console.error(`Error:" ${err}`);
         res.status(500).send({ message: "Internal server error" });
       }
     } finally {

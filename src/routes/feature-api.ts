@@ -7,6 +7,7 @@ import readFlag from "../feature-flags/read-flag";
 import readFlagByQuery from "../feature-flags/get-feature-flag";
 import toggleFlag from "../feature-flags/toggle-flag";
 import toggleAudit from "../feature-flags/toggle-audit";
+import deleteFlag from "../feature-flags/delete-feature-flag";
 const feature = express.Router();
 
 // Get the value of the feature flag.
@@ -52,6 +53,9 @@ feature.post("/app/v1/read-feature-flag", readFlag.readFlag);
 feature.get("/app/v1/read-feature-flag", readFlagByQuery.readFlagByQuery);
 /* Connected to PG DB  */
 feature.post("/app/v1/toggle-feature-flag", toggleFlag.toggleFlag);
-
+/* Connected to PG DB  */
 feature.get("/app/v1/toggle-audit", toggleAudit.toggleAudit);
+/* Connected to PG DB  */
+feature.delete("/app/v1/delete-feature-flag", deleteFlag.deleteFlag);
+
 export default feature;
