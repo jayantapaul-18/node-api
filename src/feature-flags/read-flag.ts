@@ -1,17 +1,15 @@
 import { type Request, type Response, type NextFunction } from "express";
-import axios, { type AxiosResponse } from "axios";
 import log from "../logger/winston-logger";
-import {
-  types,
-  Client,
-  type QueryResult,
-  type ClientConfig,
-  CustomTypesConfig,
-  QueryArrayConfig,
-  Pool,
-  DatabaseError,
-} from "pg";
+import { type QueryResult } from "pg";
 import PGDB from "../DB/postgres-db";
+import * as joi from "joi";
+
+// Define a validation schema using Joi
+const inputSchema = joi.object({
+  name: joi.string().required(),
+  environment: joi.string().required(),
+  userName: joi.string().required(),
+});
 
 /* readFlag */
 const readFlag = async (
@@ -19,32 +17,22 @@ const readFlag = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  // Check if the request body is undefined or null
-  if (req.body.name === undefined || req.body.name === null) {
-    console.log(req.body);
-    res.status(400).json({ error: "Request body is undefined or null" });
+  const { error } = inputSchema.validate(req.body);
+  if (error != null) {
+    res.status(400).json({ error: error.details[0].message });
   } else {
-    console.log("name: ", req.body.name);
-    const name: string = req.body.name;
-    const enabled: boolean = req.body.enabled;
-    const project: string = req.body.project;
-    const environment: string = req.body.environment;
+    const { name, environment, userName } = req.body;
     let dataObject;
-    if (req.body.enabled != undefined || req.body.enabled != null) {
-      dataObject = { enabled, name };
-      console.log("dataObject:", dataObject);
-    } else {
-      dataObject = { name };
-      console.log("dataObject:", dataObject);
-    }
+    // eslint-disable-next-line prefer-const
+    dataObject = { name, environment };
+    console.log("dataObject:", dataObject);
 
     readData(dataObject)
       .then((featureFlags) => {
         console.log("Feature flag data:", featureFlags);
         res.status(200).send(featureFlags);
-        // Process the feature flag data as needed
       })
-      .catch((error) => {
+      .catch((error: any) => {
         console.error("Error:", error);
         log.error("Error:", error);
         res.status(500).json({
@@ -60,8 +48,9 @@ async function readData(data: any): Promise<any[]> {
   try {
     // Connect to the database
     // await client.connect()
-    const insertQuery = "SELECT * FROM flags WHERE name = $1 AND enabled= $2";
-    const insertValues = [data.name, data.enabled];
+    const insertQuery =
+      "SELECT * FROM flags WHERE name = $1 AND environment= $2";
+    const insertValues = [data.name, data.environment];
     const results: QueryResult = await client.query(insertQuery, insertValues);
     console.log("Data fetch successfully!");
     // Release the client connection

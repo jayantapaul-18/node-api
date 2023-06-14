@@ -27,21 +27,29 @@ POST http://localhost:3009/app/v1/create-feature-flag HTTP/1.1
 content-type: application/json
 
 {
-    "name": "grafana_monitoring",
+    "name": "jwt_validation",
     "enabled": true,
     "project": "observability",
     "environment": "plab",
-    "description": "This is a observability feature"
+    "description": "This is a observability feature",
+    "userName": "admin"
+}
+### Delete
+DELETE http://localhost:3009/app/v1/delete-feature-flag HTTP/1.1
+content-type: application/json
+
+{
+    "featureName": "jwt_validation",
+    "environment": "plab"
 }
 ### read-feature-flag
 POST http://localhost:3009/app/v1/read-feature-flag HTTP/1.1
 content-type: application/json
 
 {
-    "name": "secure_auth",
-    "enabled": true,
-    "project": "dark",
-    "environment": "local"
+    "name": "jwt_validation",
+    "environment": "plab",
+    "userName": "admin"
 }
 ###
 POST http://localhost:3009/app/v1/feature-flags HTTP/1.1
@@ -62,12 +70,10 @@ POST http://localhost:3009/app/v1/toggle-feature-flag HTTP/1.1
 content-type: application/json
 
 {
-    "name": "api_monitoring3",
+    "name": "jwt_validation",
     "enabled": true,
-    "project": "apm",
-    "environment": "prod",
-    "description": "new apm project",
-    "user_name": "admin"
+    "environment": "plab",
+    "userName": "admin"
 }
 ###
 GET http://localhost:3009/app/v1/read-feature-flag?name=secure_auth
@@ -79,6 +85,6 @@ DELETE http://localhost:3009/app/v1/delete-feature-flag HTTP/1.1
 content-type: application/json
 
 {
-    "featureName": "api_monitoring2",
-    "environment": "prod"
+    "featureName": "jwt_validation",
+    "environment": "plab"
 }

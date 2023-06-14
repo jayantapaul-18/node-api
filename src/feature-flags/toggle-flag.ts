@@ -1,9 +1,16 @@
 import { type Request, type Response, type NextFunction } from "express";
 import log from "../logger/winston-logger";
 import { type QueryResult } from "pg";
-
 import PGDB from "../DB/postgres-db";
 import * as joi from "joi";
+
+// Define a validation schema using Joi
+const inputSchema = joi.object({
+  name: joi.string().required(),
+  enabled: joi.boolean().required(),
+  environment: joi.string().required(),
+  userName: joi.string().required(),
+});
 
 /* toggleFlag */
 const toggleFlag = async (
@@ -11,14 +18,9 @@ const toggleFlag = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  const schema = joi.object({
-    enabled: joi.boolean().required(),
-  });
-  try {
-    const { value } = schema.validate({ enabled: req.body.enabled });
-    console.log("validate_value: ", value);
-  } catch (err) {
-    res.status(400).json({ error: err });
+  const { error } = inputSchema.validate(req.body);
+  if (error != null) {
+    res.status(400).json({ error: error.details[0].message });
   }
   // Check if the request body is undefined or null
   if (req.body.enabled === undefined || req.body.enabled === null) {
@@ -29,17 +31,13 @@ const toggleFlag = async (
     console.log(req.body);
     res.status(400).json({ error: "Request body is undefined or null" });
   } else {
-    console.log("name: ", req.body.name);
-    const name: string = req.body.name;
-    const enabled: boolean = req.body.enabled;
-    const project: string = req.body.project;
-    const environment: string = req.body.environment;
-    const description: string = req.body.description;
+    const { name, enabled, environment, userName } = req.body;
     const lastToogle = new Date();
     const updatedAt = new Date();
-    const user_name = req.body.user_name;
+    // const user_name = req.body.user_name
     const color = "blue";
-    const children = `${name} flag set as  ${enabled} by user ${user_name} AT ${updatedAt}`;
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    const children = `${name} flag set as  ${enabled} by user ${userName} AT ${updatedAt}`;
     const dot = "";
     const client = await PGDB.pool.connect();
     try {
@@ -56,7 +54,7 @@ const toggleFlag = async (
         const data = {
           name,
           enabled,
-          user_name,
+          userName,
           color,
           children,
           dot,
@@ -87,44 +85,6 @@ const toggleFlag = async (
         console.error(`Error:" ${err}`);
         res.status(500).send({ message: "Internal server error" });
       }
-      // if (err) {
-      //   if (err.message === 'Client has already been connected') {
-      //     console.log(
-      //       'Client is already connected. Skipping connection step.'
-      //     )
-      //     log.error('Client is already connected. Skipping connection step.')
-      //     res.status(500).send({ message: 'feature toggle failed', error: err })
-      //     // Insert your data insertion logic here
-      //   } if (err.code === '23502') {
-      //     console.log(
-      //       'Client is already connected. Skipping connection step.'
-      //     )
-      //     res.status(500).send({ message: 'feature toggle failed', error: err })
-      //   }
-      //   else {
-      //     console.error('Error updating data:', err)
-      //     log.error('Error updating data:', err)
-      //     res.status(500).send({ message: 'feature toggle failed', error: err })
-      //   }
-      //   client.release()
-      //   res.status(500).send({ message: 'feature toggle failed', error: err })
-      //   throw err
-      // }
-      // // return response
-      // client.release()
-      // const data = {
-      //   name,
-      //   enabled,
-      //   user_name,
-      //   color,
-      //   children,
-      //   dot,
-      //   environment,
-      //   auditdate: updatedAt
-      // }
-      // console.log(data)
-      // feature_audit_write(data)
-      // res.status(200).send({message: 'feature toggle successfull', data: data})
     }
   }
 };
@@ -138,7 +98,7 @@ async function feature_audit_write(data: any): Promise<any[]> {
     const insertValues = [
       data.name,
       data.enabled,
-      data.user_name,
+      data.userName,
       data.color,
       data.children,
       data.dot,

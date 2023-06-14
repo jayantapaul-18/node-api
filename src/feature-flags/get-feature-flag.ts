@@ -1,16 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
-import axios, { type AxiosResponse } from "axios";
 import log from "../logger/winston-logger";
-import {
-  types,
-  Client,
-  type QueryResult,
-  type ClientConfig,
-  CustomTypesConfig,
-  QueryArrayConfig,
-  Pool,
-  DatabaseError,
-} from "pg";
+import { type QueryResult } from "pg";
 import PGDB from "../DB/postgres-db";
 
 /* readFlagByQuery */

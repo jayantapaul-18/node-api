@@ -2,6 +2,17 @@ import { type Request, type Response, type NextFunction } from "express";
 import log from "../logger/winston-logger";
 import { type QueryResult } from "pg";
 import PGDB from "../DB/postgres-db";
+import * as joi from "joi";
+
+// Define a validation schema using Joi
+const inputSchema = joi.object({
+  name: joi.string().required(),
+  enabled: joi.boolean().required(),
+  project: joi.string().required(),
+  environment: joi.string().required(),
+  description: joi.string().required(),
+  userName: joi.string().required(),
+});
 
 /* createFlag */
 const createFlag = async (
@@ -9,16 +20,12 @@ const createFlag = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  // Check if the request body is undefined or null
-  if (req.body.enabled === undefined || req.body.enabled === null) {
-    console.log(req.body);
-    res.status(400).json({ error: "Request body is undefined or null" });
+  const { error } = inputSchema.validate(req.body);
+  if (error != null) {
+    res.status(400).json({ error: error.details[0].message });
   } else {
-    const name: string = req.body.name;
-    const enabled: boolean = req.body.enabled;
-    const project: string = req.body.project;
-    const environment: string = req.body.environment;
-    const description: string = req.body.description;
+    const { name, enabled, project, environment, description, userName } =
+      req.body;
     const createdAt = new Date();
     const client = await PGDB.pool.connect();
 
