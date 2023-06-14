@@ -1,18 +1,9 @@
 import { type Request, type Response, type NextFunction } from "express";
-import axios, { type AxiosResponse } from "axios";
 import log from "../logger/winston-logger";
-import {
-  types,
-  Client,
-  type ClientConfig,
-  type QueryResult,
-  CustomTypesConfig,
-  QueryArrayConfig,
-  Pool,
-  DatabaseError,
-} from "pg";
+import { type QueryResult } from "pg";
 
 import PGDB from "../DB/postgres-db";
+import * as joi from "joi";
 
 /* toggleFlag */
 const toggleFlag = async (
@@ -20,8 +11,21 @@ const toggleFlag = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  const schema = joi.object({
+    enabled: joi.boolean().required(),
+  });
+  try {
+    const { value } = schema.validate({ enabled: req.body.enabled });
+    console.log("validate_value: ", value);
+  } catch (err) {
+    res.status(400).json({ error: err });
+  }
   // Check if the request body is undefined or null
   if (req.body.enabled === undefined || req.body.enabled === null) {
+    console.log(req.body);
+    res.status(400).json({ error: "Request body is undefined or null" });
+  }
+  if (req.body.name === undefined || req.body.name === null) {
     console.log(req.body);
     res.status(400).json({ error: "Request body is undefined or null" });
   } else {
@@ -38,44 +42,94 @@ const toggleFlag = async (
     const children = `${name} flag set as  ${enabled} by user ${user_name} AT ${updatedAt}`;
     const dot = "";
     const client = await PGDB.pool.connect();
-    client.query(
-      "UPDATE flags SET name = $1, enabled =$2 , lastToogle = $3 , updatedAt = $4 , description = $5 WHERE name = $1",
-      [name, enabled, lastToogle, updatedAt, children],
-      (err, results): void => {
-        if (err) {
-          if (err.message === "Client has already been connected") {
-            console.log(
-              "Client is already connected. Skipping connection step."
-            );
-            log.error("Client is already connected. Skipping connection step.");
-            // Insert your data insertion logic here
-          } else {
-            console.error("Error updating data:", err);
-            log.error("Error updating data:", err);
-          }
-          client.release();
-          throw err;
-        }
-        // return response
+    try {
+      const query =
+        "UPDATE flags SET name = $1, enabled =$2 , lastToogle = $3 , updatedAt = $4 , description = $5 WHERE name = $1";
+      const values = [name, enabled, lastToogle, updatedAt, children];
+      // (err, results): void => {
+      const result: QueryResult = await client.query(query, values);
+      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
+      if (result) {
+        console.log("RESULT: ", result.rowCount);
+        // return success response
         client.release();
         const data = {
-          name: name,
-          enabled: enabled,
-          user_name: user_name,
-          color: color,
-          children: children,
-          dot: dot,
-          environment: environment,
+          name,
+          enabled,
+          user_name,
+          color,
+          children,
+          dot,
+          environment,
           auditdate: updatedAt,
         };
         console.log(data);
         feature_audit_write(data);
-        res.status(200).send(results);
+        res.status(200).send({ message: "feature toggle successfull", data });
       }
-    );
+    } catch (err: any) {
+      if (err.code === "23505") {
+        console.log(
+          "Error #23505 - duplicate key value violates unique constraint"
+        );
+        log.error(
+          "Error #23505 - duplicate key value violates unique constraint"
+        );
+        res
+          .status(409)
+          .send({ message: "duplicate key value violates unique constraint" });
+      }
+      if (err.code === "23502") {
+        console.log("Error #23502 - null value in column");
+        log.error("Error #23502 - null value in column");
+        res.status(400).send({ message: "null value in column" });
+      } else {
+        console.error(`Error:" ${err}`);
+        res.status(500).send({ message: "Internal server error" });
+      }
+      // if (err) {
+      //   if (err.message === 'Client has already been connected') {
+      //     console.log(
+      //       'Client is already connected. Skipping connection step.'
+      //     )
+      //     log.error('Client is already connected. Skipping connection step.')
+      //     res.status(500).send({ message: 'feature toggle failed', error: err })
+      //     // Insert your data insertion logic here
+      //   } if (err.code === '23502') {
+      //     console.log(
+      //       'Client is already connected. Skipping connection step.'
+      //     )
+      //     res.status(500).send({ message: 'feature toggle failed', error: err })
+      //   }
+      //   else {
+      //     console.error('Error updating data:', err)
+      //     log.error('Error updating data:', err)
+      //     res.status(500).send({ message: 'feature toggle failed', error: err })
+      //   }
+      //   client.release()
+      //   res.status(500).send({ message: 'feature toggle failed', error: err })
+      //   throw err
+      // }
+      // // return response
+      // client.release()
+      // const data = {
+      //   name,
+      //   enabled,
+      //   user_name,
+      //   color,
+      //   children,
+      //   dot,
+      //   environment,
+      //   auditdate: updatedAt
+      // }
+      // console.log(data)
+      // feature_audit_write(data)
+      // res.status(200).send({message: 'feature toggle successfull', data: data})
+    }
   }
 };
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 async function feature_audit_write(data: any): Promise<any[]> {
   const clientAudit = await PGDB.poolAudit.connect();
   try {
