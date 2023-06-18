@@ -1,0 +1,580 @@
+{
+  "info": {
+    "_postman_id": "59986b53-22df-4c6b-8423-790e388a6069",
+    "name": "node-api-postman-collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "6191198"
+  },
+  "item": [
+    {
+      "name": "/health",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    try {",
+              "        let responseJSON = pm.response.json();",
+              "       pm.environment.set(\"user_id\", responseJSON.user_id);",
+              "       pm.environment.set(\"access_token\", responseJSON.access_token);",
+              "       const id_tokens = (responseJSON.id_tokens);",
+              "//console.log(id_tokens[0]);",
+              "const payload = id_tokens[0]; ",
+              "//console.log((payload));",
+              "//  Extracting id_token ",
+              "var dataArray = [];",
+              "for (var key in payload)",
+              "    dataArray.push(payload[key]);",
+              "    const id_token = dataArray[0];",
+              "    console.log(id_token);",
+              "     pm.environment.set(\"id_token\", id_token);",
+              "// Decode JWT token ",
+              "function jwt_decode(a) {",
+              "    var parts = a.split('.'); // header, payload, signature",
+              "    return JSON.parse(atob(parts[1]));",
+              "}",
+              "pm.test(\"validate data\", function () {",
+              "    //Get the token",
+              "    var a=pm.environment.get(\"id_token\");",
+              "    //call your function to decode it",
+              "    let decodedData=jwt_decode(a);",
+              "    //print the decodedData to console to see the structure",
+              "    console.log(decodedData);",
+              "     //print the required field and print it to console to see the value",
+              "    console.log(decodedData.iss);",
+              "    //validate it using pm expect",
+              "    pm.expect(decodedData.iss).to.deep.equal(\"https://\");",
+              "});",
+              "    }",
+              "    catch (e) { }",
+              "",
+              "setTimeout(function(){",
+              "          console.log(\"Sleeping for 1 seconds before next request.\");",
+              "  }, 100);",
+              "// postman.setNextRequest('')",
+              "",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var uuid = require('uuid'); var myUUID = uuid.v4();",
+              "postman.setGlobalVariable(\"uuid\", 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8); return v.toString(16); }));",
+              ""
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "type": "text",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3009/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3009",
+          "path": ["health"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/app/v1/read-feature-flag?name=api_monitoring",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    try {",
+              "        let responseJSON = pm.response.json();",
+              "       pm.environment.set(\"user_id\", responseJSON.user_id);",
+              "       pm.environment.set(\"access_token\", responseJSON.access_token);",
+              "       const id_tokens = (responseJSON.id_tokens);",
+              "//console.log(id_tokens[0]);",
+              "const payload = id_tokens[0]; ",
+              "//console.log((payload));",
+              "//  Extracting id_token ",
+              "var dataArray = [];",
+              "for (var key in payload)",
+              "    dataArray.push(payload[key]);",
+              "    const id_token = dataArray[0];",
+              "    console.log(id_token);",
+              "     pm.environment.set(\"id_token\", id_token);",
+              "// Decode JWT token ",
+              "function jwt_decode(a) {",
+              "    var parts = a.split('.'); // header, payload, signature",
+              "    return JSON.parse(atob(parts[1]));",
+              "}",
+              "pm.test(\"validate data\", function () {",
+              "    //Get the token",
+              "    var a=pm.environment.get(\"id_token\");",
+              "    //call your function to decode it",
+              "    let decodedData=jwt_decode(a);",
+              "    //print the decodedData to console to see the structure",
+              "    console.log(decodedData);",
+              "     //print the required field and print it to console to see the value",
+              "    console.log(decodedData.iss);",
+              "    //validate it using pm expect",
+              "    pm.expect(decodedData.iss).to.deep.equal(\"https://\");",
+              "});",
+              "    }",
+              "    catch (e) { }",
+              "",
+              "setTimeout(function(){",
+              "          console.log(\"Sleeping for 1 seconds before next request.\");",
+              "  }, 100);",
+              "// postman.setNextRequest('')",
+              "",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var uuid = require('uuid'); var myUUID = uuid.v4();",
+              "postman.setGlobalVariable(\"uuid\", 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8); return v.toString(16); }));",
+              ""
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "type": "text",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3009/app/v1/read-feature-flag?name=api_monitoring",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3009",
+          "path": ["app", "v1", "read-feature-flag"],
+          "query": [
+            {
+              "key": "name",
+              "value": "api_monitoring"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/app/v1/read-feature-flag?name=jwt_validation&enabled=true",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    try {",
+              "        let responseJSON = pm.response.json();",
+              "       pm.environment.set(\"user_id\", responseJSON.user_id);",
+              "       pm.environment.set(\"access_token\", responseJSON.access_token);",
+              "       const id_tokens = (responseJSON.id_tokens);",
+              "//console.log(id_tokens[0]);",
+              "const payload = id_tokens[0]; ",
+              "//console.log((payload));",
+              "//  Extracting id_token ",
+              "var dataArray = [];",
+              "for (var key in payload)",
+              "    dataArray.push(payload[key]);",
+              "    const id_token = dataArray[0];",
+              "    console.log(id_token);",
+              "     pm.environment.set(\"id_token\", id_token);",
+              "// Decode JWT token ",
+              "function jwt_decode(a) {",
+              "    var parts = a.split('.'); // header, payload, signature",
+              "    return JSON.parse(atob(parts[1]));",
+              "}",
+              "pm.test(\"validate data\", function () {",
+              "    //Get the token",
+              "    var a=pm.environment.get(\"id_token\");",
+              "    //call your function to decode it",
+              "    let decodedData=jwt_decode(a);",
+              "    //print the decodedData to console to see the structure",
+              "    console.log(decodedData);",
+              "     //print the required field and print it to console to see the value",
+              "    console.log(decodedData.iss);",
+              "    //validate it using pm expect",
+              "    pm.expect(decodedData.iss).to.deep.equal(\"https://\");",
+              "});",
+              "    }",
+              "    catch (e) { }",
+              "",
+              "setTimeout(function(){",
+              "          console.log(\"Sleeping for 1 seconds before next request.\");",
+              "  }, 100);",
+              "// postman.setNextRequest('')",
+              "",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var uuid = require('uuid'); var myUUID = uuid.v4();",
+              "postman.setGlobalVariable(\"uuid\", 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8); return v.toString(16); }));",
+              ""
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "type": "text",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3009/app/v1/read-feature-flag?name=jwt_validation&enabled=true",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3009",
+          "path": ["app", "v1", "read-feature-flag"],
+          "query": [
+            {
+              "key": "name",
+              "value": "jwt_validation"
+            },
+            {
+              "key": "enabled",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "feature-flags",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    try {",
+              "        let responseJSON = pm.response.json();",
+              "       pm.environment.set(\"enabled\", responseJSON.message.enabled);",
+              "    }",
+              "    catch (e) { }",
+              "",
+              "setTimeout(function(){",
+              "          console.log(\"Sleeping for 1 seconds before next request.\");",
+              "  }, 100);",
+              "// postman.setNextRequest('')",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var uuid = require('uuid'); var myUUID = uuid.v4();",
+              "postman.setGlobalVariable(\"uuid\", 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8); return v.toString(16); }));",
+              ""
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "type": "text",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"featureEnable\": false\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3009/feature-flags",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3009",
+          "path": ["feature-flags"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/app/v1/create-feature-flag",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    try {",
+              "        let responseJSON = pm.response.json();",
+              "       pm.environment.set(\"enabled\", responseJSON.message.enabled);",
+              "    }",
+              "    catch (e) { }",
+              "",
+              "setTimeout(function(){",
+              "          console.log(\"Sleeping for 1 seconds before next request.\");",
+              "  }, 100);",
+              "// postman.setNextRequest('')",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var uuid = require('uuid'); var myUUID = uuid.v4();",
+              "postman.setGlobalVariable(\"uuid\", 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8); return v.toString(16); }));",
+              ""
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "type": "text",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"jwt_validation\",\n    \"enabled\": true,\n    \"project\": \"observability\",\n    \"environment\": \"plab\",\n    \"description\": \"This is a observability feature\",\n    \"userName\": \"admin\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3009/app/v1/create-feature-flag",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3009",
+          "path": ["app", "v1", "create-feature-flag"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/app/v1/toggle-feature-flag",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    try {",
+              "        let responseJSON = pm.response.json();",
+              "       pm.environment.set(\"enabled\", responseJSON.message.enabled);",
+              "    }",
+              "    catch (e) { }",
+              "",
+              "setTimeout(function(){",
+              "          console.log(\"Sleeping for 1 seconds before next request.\");",
+              "  }, 100);",
+              "// postman.setNextRequest('')",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var uuid = require('uuid'); var myUUID = uuid.v4();",
+              "postman.setGlobalVariable(\"uuid\", 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8); return v.toString(16); }));",
+              ""
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "type": "text",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"jwt_validation\",\n    \"enabled\": true,\n    \"environment\": \"plab\",\n    \"userName\": \"admin\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3009/app/v1/toggle-feature-flag",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3009",
+          "path": ["app", "v1", "toggle-feature-flag"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/app/v1/delete-feature-flag",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    try {",
+              "        let responseJSON = pm.response.json();",
+              "       pm.environment.set(\"enabled\", responseJSON.message.enabled);",
+              "    }",
+              "    catch (e) { }",
+              "",
+              "setTimeout(function(){",
+              "          console.log(\"Sleeping for 1 seconds before next request.\");",
+              "  }, 100);",
+              "// postman.setNextRequest('')",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var uuid = require('uuid'); var myUUID = uuid.v4();",
+              "postman.setGlobalVariable(\"uuid\", 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8); return v.toString(16); }));",
+              ""
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "type": "text",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"featureName\": \"jwt_validation\",\n    \"environment\": \"plab\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3009/app/v1/delete-feature-flag",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3009",
+          "path": ["app", "v1", "delete-feature-flag"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "/app/v1/toggle-audit",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    try {",
+              "        let responseJSON = pm.response.json();",
+              "       pm.environment.set(\"enabled\", responseJSON.message.enabled);",
+              "    }",
+              "    catch (e) { }",
+              "",
+              "setTimeout(function(){",
+              "          console.log(\"Sleeping for 1 seconds before next request.\");",
+              "  }, 100);",
+              "// postman.setNextRequest('')",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var uuid = require('uuid'); var myUUID = uuid.v4();",
+              "postman.setGlobalVariable(\"uuid\", 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8); return v.toString(16); }));",
+              ""
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "name": "Content-Type",
+            "type": "text",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:3009/app/v1/toggle-audit",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3009",
+          "path": ["app", "v1", "toggle-audit"]
+        }
+      },
+      "response": []
+    }
+  ]
+}
