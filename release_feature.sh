@@ -10,7 +10,8 @@
 # - Git must be installed and accessible in the PATH.
 # - Bash 3.x or higher (tested with 3.x and 4.x+).
 # - Internet connectivity for fetching tags and generating remote links.
-# - 'jq' command-line JSON processor for JSON output format.
+# - 'jq' command-line JSON processor for JSON output format (--format json).
+# - 'sed' command-line stream editor (standard on most systems).
 #
 # Usage:
 #   ./release.sh [options]
@@ -19,26 +20,29 @@
 #   --dry-run                 : Simulate the process without creating files,
 #                               tags, or pushing.
 #   --output <filename>       : Specify the output file for release notes
-#                               (default: RELEASE_NOTES.md or release.json).
+#                               (default: RELEASE_NOTES.md or release.json based on format).
 #   --tag <tagname>           : Specify the exact tag name for the new release.
 #                               If not provided, the script suggests one
-#                               based on Conventional Commits.
-#   --since <tagname>         : Generate notes from a specific tag instead of
-#                               the last found tag.
+#                               based on Conventional Commits and --bump-type.
+#   --since <tagname>         : Generate notes from a specific tag/ref instead of
+#                               the last found tag (e.g., 'v1.0.0' or 'main~5').
 #   --remote-url <base_url>   : Override the base URL for remote links
 #                               (default: inferred from git origin).
+#                               Used for commit links and compare URL.
 #   --bump-type <type>        : Override the automatically determined semantic
 #                               version bump type (major, minor, patch, none).
 #                               Only effective if --tag is not used.
 #   --create-tag              : Create the Git tag locally. Requires --tag
 #                               unless a version is suggested automatically.
+#                               Uses generated markdown notes as tag message (if format is markdown).
 #   --push-tag                : Push the created Git tag to the remote.
-#                               Implies --create-tag if --tag is provided.
+#                               Implies --create-tag if --tag is provided and valid.
 #   --push-remote <remote>    : Specify the remote name to push tags to
 #                               (default: origin). Used with --push-tag.
 #   --no-confirm              : Skip interactive confirmation prompts for
 #                               creating/pushing tags. Use with caution.
 #   --format <type>           : Output format: 'markdown' (default) or 'json'.
+#                               Requires 'jq' for 'json' format.
 #   --no-color                : Disable color output in logs.
 #   -h, --help                : Display this help message.
 #
@@ -52,47 +56,41 @@
 #   RELEASE_LOG_NO_COLOR      : Set to 'true' to disable color logs.
 #   RELEASE_DEFAULT_FORMAT    : Overrides default output format ('markdown' or 'json').
 #
-# Script Version: 4.0 (Color Logs, JSON Output)
+# Script Version: 4.1 (Fixes 'local' and markdown escaping)
 
-set -euo pipefail # Exit immediately if a command exits with a non-zero status.
-                  # Exit if an unset variable is used.
+# set -euo pipefail # Exit immediately if a command exits with a non-zero status.
+#                   # Exit if an unset variable is used.
                   # Exit if a command in a pipe fails.
 
 # --- Configuration Defaults (Can be overridden by ENV vars or args) ---
-REMOTE_URL_BASE="${RELEASE_REMOTE_URL_BASE:-}" # Will be auto-detected if empty
-TAG_PREFIX="${RELEASE_TAG_PREFIX:-v}"
-DEFAULT_REMOTE="${RELEASE_DEFAULT_REMOTE:-origin}"
-DEFAULT_TAG_PREFIX="${RELEASE_DEFAULT_TAG_PREFIX:-v}" # Use this if TAG_PREFIX is empty
-FORMAT="${RELEASE_DEFAULT_FORMAT:-markdown}" # Default output format
-OUTPUT_FILE="" # Will be set later based on format if not provided
-
-# --- Color Configuration ---
-NO_COLOR=${RELEASE_LOG_NO_COLOR:-false} # Default false, can be true via ENV var
-if [ "$NO_COLOR" = true ] || [ ! -t 1 ]; then # Also disable if stdout is not a terminal
-    COLOR_GREEN=""
-    COLOR_YELLOW=""
-    COLOR_RED=""
-    COLOR_RESET=""
+REMOTE_URL_BASE="<span class="math-inline">\{RELEASE\_REMOTE\_URL\_BASE\:\-\}" \# Will be auto\-detected if empty
+TAG\_PREFIX\="</span>{RELEASE_TAG_PREFIX:-v}"
+DEFAULT_REMOTE="<span class="math-inline">\{RELEASE\_DEFAULT\_REMOTE\:\-origin\}"
+DEFAULT\_TAG\_PREFIX\="</span>{RELEASE_DEFAULT_TAG_PREFIX:-v}" # Use this if TAG_PREFIX is empty
+FORMAT="<span class="math-inline">\{RELEASE\_DEFAULT\_FORMAT\:\-markdown\}" \# Default output format
+OUTPUT\_FILE\="" \# Will be set later based on format if not provided
+\# \-\-\- Color Configuration \-\-\-
+NO\_COLOR\=</span>{RELEASE_LOG_NO_COLOR:-false} # Default false, can be true via ENV var
+if [ "<span class="math-inline">NO\_COLOR" \= true \] \|\| \[ \! \-t 1 \]; then \# Also disable if stdout is not a terminal
+COLOR\_GREEN\=""
+COLOR\_YELLOW\=""
+COLOR\_RED\=""
+COLOR\_RESET\=""
 else
-    COLOR_GREEN="\033[32m"
-    COLOR_YELLOW="\033[33m"
-    COLOR_RED="\033[31m"
-    COLOR_RESET="\033[0m"
+COLOR\_GREEN\="\\033\[32m"
+COLOR\_YELLOW\="\\033\[33m"
+COLOR\_RED\="\\033\[31m"
+COLOR\_RESET\="\\033\[0m"
 fi
-
-
-# --- Helper Functions ---
-
-log() {
-    echo -e "${COLOR_GREEN}[INFO]$(date +'%Y-%m-%d %H:%M:%S')${COLOR_RESET} $1"
-}
-
-warn() {
-    echo -e "${COLOR_YELLOW}[WARN]$(date +'%Y-%m-%d %H:%M:%S')${COLOR_RESET} $1" >&2
-}
-
-error_exit() {
-    echo -e "${COLOR_RED}[ERROR]$(date +'%Y-%m-%d %H:%M:%S')${COLOR_RESET} $1" >&2
+\# \-\-\- Helper Functions \-\-\-
+log\(\) \{
+echo \-e "</span>{COLOR_GREEN}[INFO]<span class="math-inline">\(date \+'%Y\-%m\-%d %H\:%M\:%S'\)</span>{COLOR_RESET} <span class="math-inline">1"
+\}
+warn\(\) \{
+echo \-e "</span>{COLOR_YELLOW}[WARN]<span class="math-inline">\(date \+'%Y\-%m\-%d %H\:%M\:%S'\)</span>{COLOR_RESET} <span class="math-inline">1" \>&2
+\}
+error\_exit\(\) \{
+echo \-e "</span>{COLOR_RED}[ERROR]<span class="math-inline">\(date \+'%Y\-%m\-%d %H\:%M\:%S'\)</span>{COLOR_RESET} $1" >&2
     exit 1
 }
 
@@ -105,27 +103,27 @@ get_last_tag() {
     # Fallback to lightweight tags if no annotated tags.
     # Use --match "$TAG_PREFIX*" to filter by prefix if TAG_PREFIX is not empty.
     local tag
-    if [ -n "$TAG_PREFIX" ]; then
-       tag=$(git describe --tags --abbrev=0 --match "${TAG_PREFIX}*" HEAD 2>/dev/null || true)
-    else
-       tag=$(git describe --tags --abbrev=0 HEAD 2>/dev/null || true)
+    if [ -n "<span class="math-inline">TAG\_PREFIX" \]; then
+tag\=</span>(git describe --tags --abbrev=0 --match "<span class="math-inline">\{TAG\_PREFIX\}\*" HEAD 2\>/dev/null \|\| true\)
+else
+tag\=</span>(git describe --tags --abbrev=0 HEAD 2>/dev/null || true)
     fi
 
     # If describe failed or didn't find anything, try listing all tags
     if [ -z "$tag" ]; then
-        if [ -n "$TAG_PREFIX" ]; then
-            tag=$(git tag -l "${TAG_PREFIX}*" --sort='-v:refname' | head -n 1 || true)
-        else
-            tag=$(git tag -l --sort='-v:refname' | head -n 1 || true)
+        if [ -n "<span class="math-inline">TAG\_PREFIX" \]; then
+tag\=</span>(git tag -l "<span class="math-inline">\{TAG\_PREFIX\}\*" \-\-sort\='\-v\:refname' \| head \-n 1 \|\| true\)
+else
+tag\=</span>(git tag -l --sort='-v:refname' | head -n 1 || true)
         fi
     fi
      echo "$tag"
 }
 
 get_commits_since() {
-    local since_ref="$1"
-    local current_commit
-    current_commit=$(git rev-parse HEAD)
+    local since_ref="<span class="math-inline">1"
+local current\_commit
+current\_commit\=</span>(git rev-parse HEAD)
 
     if [ -z "$since_ref" ]; then
         log "No previous tag/ref found. Getting all commits up to $current_commit."
@@ -142,29 +140,28 @@ get_commits_since() {
                  error_exit "Reference '$since_ref' still not found after attempting fetch. Cannot generate notes."
              fi
         fi
-        log "Getting commits since ref: $since_ref (excluding $since_ref, up to $current_commit)"
-        # Get commits between since_ref (exclusive) and HEAD (inclusive)
-        git log "${since_ref}..HEAD" --pretty=format:"%H%x09%an%x09%s"
+        log "Getting commits since ref: $since_ref (excluding $since_ref, up to <span class="math-inline">current\_commit\)"
+\# Get commits between since\_ref \(exclusive\) and HEAD \(inclusive\)
+git log "</span>{since_ref}..HEAD" --pretty=format:"%H%x09%an%x09%s"
     fi
 }
 
 parse_commit() {
     local commit_hash="$1"
     local commit_author="$2"
-    local commit_msg="$3" # This is the subject line for now
-
-    # Pattern to extract type, scope, breaking indicator, and subject
-    # Handles: type(scope): subject, type: subject, type!: subject, type(scope)!: subject
-    local pattern='^([a-zA-Z]+)(\(([^)]+)\))?(!)?:[[:space:]]*(.*)$'
+    local commit_msg="<span class="math-inline">3" \# This is the subject line for now
+\# Pattern to extract type, scope, breaking indicator, and subject
+\# Handles\: type\(scope\)\: subject, type\: subject, type\!\: subject, type\(scope\)\!\: subject
+local pattern\='^\(\[a\-zA\-Z\]\+\)\(\\\(\(\[^\)\]\+\)\\\)\)?\(\!\)?\:\[\[\:space\:\]\]\*\(\.\*\)</span>'
     local type_raw="Unknown"
     local scope=""
     local breaking_change_indicator=""
     local subject="$commit_msg" # Default subject is the full line
 
-    if [[ "$commit_msg" =~ $pattern ]]; then
-        type_raw="${BASH_REMATCH[1]}"
-        scope="${BASH_REMATCH[3]}"
-        breaking_change_indicator="${BASH_REMATCH[4]}"
+    if [[ "$commit_msg" =~ <span class="math-inline">pattern \]\]; then
+type\_raw\="</span>{BASH_REMATCH[1]}"
+        scope="<span class="math-inline">\{BASH\_REMATCH\[3\]\}"
+breaking\_change\_indicator\="</span>{BASH_REMATCH[4]}"
         subject="${BASH_REMATCH[5]}" # Use the part after ": "
     fi
 
@@ -186,13 +183,15 @@ parse_commit() {
     esac
 
     # Check for BREAKING CHANGE indicator
-     if [[ -n "$breaking_change_indicator" ]]; then
-       type_display="BREAKING CHANGES" # Override display type for breaking changes
-     fi
-
-    # Output format for temp file: TypeDisplay|Scope|Subject|Hash|Author|TypeRaw
-    # Added TypeRaw for potential future use or more detailed JSON
-    echo "${type_display}|${scope}|${subject}|${commit_hash}|${commit_author}|${type_raw}"
+     if [[ -n "<span class="math-inline">breaking\_change\_indicator" \]\]; then
+type\_display\="BREAKING CHANGES" \# Override display type for breaking changes
+fi
+\# Output format for temp file\: TypeDisplay\|Scope\|Subject\|Hash\|Author\|TypeRaw
+\# Added TypeRaw for potential future use or more detailed JSON
+\# Ensure fields are properly escaped for the pipe delimiter if they contain it \(very unlikely for these fields\)
+\# Subject and Scope might contain special characters, but escaping for the pipe is usually not needed if IFS is set correctly,
+\# However, escaping for later shell evaluation \(e\.g\., in markdown generation\) \*is\* needed\.
+echo "</span>{type_display}|<span class="math-inline">\{scope\}\|</span>{subject}|<span class="math-inline">\{commit\_hash\}\|</span>{commit_author}|${type_raw}"
 }
 
 determine_release_type() {
@@ -204,7 +203,7 @@ determine_release_type() {
     local release_type="none" # Default
 
     # Read from the temporary file outside the pipe for Bash 3 variable scope
-    if [ -f "$parsed_commits_temp_file" ]; then
+    if [ -s "$parsed_commits_temp_file" ]; then # -s checks if file exists and is not empty
         while IFS='|' read -r type_display scope subject commit_hash commit_author type_raw; do
              # Variables read here are available outside the loop in Bash 3
              if [[ "$type_display" == "BREAKING CHANGES" ]]; then
@@ -236,16 +235,15 @@ parse_semver() {
     local prefix="$2" # Expected prefix, might be empty
 
     local version_no_prefix="$version"
-    if [ -n "$prefix" ] && [[ "$version" == "$prefix"* ]]; then
-        version_no_prefix="${version#"$prefix"}"
-    fi
+    if [ -n "$prefix" ] && [[ "$version" == "<span class="math-inline">prefix"\* \]\]; then
+version\_no\_prefix\="</span>{version#"<span class="math-inline">prefix"\}"
+fi
+\# Regex pattern including optional pre\-release and build metadata
+local pattern\='^\(\[0\-9\]\+\)\\\.\(\[0\-9\]\+\)\\\.\(\[0\-9\]\+\)\(?\:\-\(\[0\-9A\-Za\-z\-\]\+\(?\:\\\.\[0\-9A\-Za\-z\-\]\+\)\*\)\)?\(?\:\\\+\(\[0\-9A\-Za\-z\-\]\+\(?\:\\\.\[0\-9A\-Za\-z\-\]\+\)\*\)\)?</span>'
 
-    # Regex pattern including optional pre-release and build metadata
-    local pattern='^([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$'
-
-    if [[ "$version_no_prefix" =~ $pattern ]]; then
-        # Output: major|minor|patch|prerelease|build
-        echo "${BASH_REMATCH[1]}|${BASH_REMATCH[2]}|${BASH_REMATCH[3]}|${BASH_REMATCH[4]}|${BASH_REMATCH[5]}"
+    if [[ "$version_no_prefix" =~ <span class="math-inline">pattern \]\]; then
+\# Output\: major\|minor\|patch\|prerelease\|build
+echo "</span>{BASH_REMATCH[1]}|<span class="math-inline">\{BASH\_REMATCH\[2\]\}\|</span>{BASH_REMATCH[3]}|<span class="math-inline">\{BASH\_REMATCH\[4\]\}\|</span>{BASH_REMATCH[5]}"
         return 0
     else
         return 1 # Parsing failed
@@ -256,24 +254,21 @@ parse_semver() {
 increment_semver() {
     local current_version="$1"
     local bump_type="$2" # major, minor, patch
-    local prefix="$3" # Optional prefix
+    local prefix="<span class="math-inline">3" \# Optional prefix
+local parsed
+parsed\=</span>(parse_semver "$current_version" "<span class="math-inline">prefix"\) \|\| \{ echo ""; return 1; \} \# Return empty string on parse error
+local major\=</span>(echo "<span class="math-inline">parsed" \| cut \-d'\|' \-f1\)
+local minor\=</span>(echo "<span class="math-inline">parsed" \| cut \-d'\|' \-f2\)
+local patch\=</span>(echo "$parsed" | cut -d'|' -f3)
 
-    local parsed
-    parsed=$(parse_semver "$current_version" "$prefix") || { echo ""; return 1; } # Return empty string on parse error
-
-    local major=$(echo "$parsed" | cut -d'|' -f1)
-    local minor=$(echo "$parsed" | cut -d'|' -f2)
-    local patch=$(echo "$parsed" | cut -d'|' -f3)
-
-    case "$bump_type" in
-        "major") major=$((major + 1)); minor=0; patch=0 ;;
-        "minor") minor=$((minor + 1)); patch=0 ;;
-        "patch") patch=$((patch + 1)) ;;
-        *) warn "Invalid bump type specified for increment: $bump_type"; echo ""; return 1 ;;
-    esac
-
-    # Drop pre-release and build metadata when bumping a release version
-    echo "${prefix}${major}.${minor}.${patch}"
+    case "<span class="math-inline">bump\_type" in
+"major"\) major\=</span>((major + 1)); minor=0; patch=0 ;;
+        "minor") minor=<span class="math-inline">\(\(minor \+ 1\)\); patch\=0 ;;
+"patch"\) patch\=</span>((patch + 1)) ;;
+        *) warn "Invalid bump type specified for increment: <span class="math-inline">bump\_type"; echo ""; return 1 ;;
+esac
+\# Drop pre\-release and build metadata when bumping a release version
+echo "</span>{prefix}<span class="math-inline">\{major\}\.</span>{minor}.${patch}"
     return 0
 }
 
@@ -291,27 +286,32 @@ confirm_action() {
         return 0
     fi
 
-    read -r -p "$prompt_message [y/N] " response
-    case "$response" in
-        [yY][eE][sS]|[yY])
-            return 0 # Confirmed
-            ;;
-        *)
-            return 1 # Denied
-            ;;
-    esac
-}
-
-get_remote_url() {
-    # Try to get the URL of the default remote (origin)
-    local remote_url
-    remote_url=$(git remote get-url "$DEFAULT_REMOTE" 2>/dev/null || true)
+    # Check if stdin is a terminal for interactive prompt
+    if [ -t 0 ]; then
+        read -r -p "$prompt_message [y/N] " response
+        case "<span class="math-inline">response" in
+\[yY\]\[eE\]\[sS\]\|\[yY\]\)
+return 0 \# Confirmed
+;;
+\*\)
+return 1 \# Denied
+;;
+esac
+else
+warn "Cannot prompt for confirmation \(stdin is not a terminal\)\. Aborting interactive action\."
+return 1 \# Cannot confirm interactively
+fi
+\}
+get\_remote\_url\(\) \{
+\# Try to get the URL of the default remote \(origin\)
+local remote\_url
+remote\_url\=</span>(git remote get-url "$DEFAULT_REMOTE" 2>/dev/null || true)
 
     if [ -z "$remote_url" ]; then
         warn "Could not automatically detect remote URL for '$DEFAULT_REMOTE'."
         echo "" # Return empty
         return 1
-    fi
+    }
 
     # Convert common formats to a base URL for commit/compare links
     # Handles: https://github.com/user/repo.git, git@github.com:user/repo.git, etc.
@@ -321,17 +321,17 @@ get_remote_url() {
     local repo_user=""
     local repo_name=""
 
-    if [[ "$remote_url" =~ ^https?://([^/]+)/([^/]+)/([^/]+)(\.git)?$ ]]; then
-        repo_host="${BASH_REMATCH[1]}"
-        repo_user="${BASH_REMATCH[2]}"
-        repo_name="${BASH_REMATCH[3]}"
-        echo "https://${repo_host}/${repo_user}/${repo_name}"
+    if [[ "<span class="math-inline">remote\_url" \=\~ ^https?\://\(\[^/\]\+\)/\(\[^/\]\+\)/\(\[^/\]\+\)\(\\\.git\)?</span> ]]; then
+        repo_host="<span class="math-inline">\{BASH\_REMATCH\[1\]\}"
+repo\_user\="</span>{BASH_REMATCH[2]}"
+        repo_name="<span class="math-inline">\{BASH\_REMATCH\[3\]\}"
+echo "https\://</span>{repo_host}/<span class="math-inline">\{repo\_user\}/</span>{repo_name}"
         return 0
-    elif [[ "$remote_url" =~ ^git@([^:]+):([^/]+)/([^/]+)(\.git)?$ ]]; then
-        repo_host="${BASH_REMATCH[1]}"
-        repo_user="${BASH_REMATCH[2]}"
-        repo_name="${BASH_REMATCH[3]}"
-         echo "https://${repo_host}/${repo_user}/${repo_name}"
+    elif [[ "<span class="math-inline">remote\_url" \=\~ ^git@\(\[^\:\]\+\)\:\(\[^/\]\+\)/\(\[^/\]\+\)\(\\\.git\)?</span> ]]; then
+        repo_host="<span class="math-inline">\{BASH\_REMATCH\[1\]\}"
+repo\_user\="</span>{BASH_REMATCH[2]}"
+        repo_name="<span class="math-inline">\{BASH\_REMATCH\[3\]\}"
+echo "https\://</span>{repo_host}/<span class="math-inline">\{repo\_user\}/</span>{repo_name}"
         return 0
     else
         warn "Could not parse remote URL format '$remote_url' for '$DEFAULT_REMOTE'."
@@ -346,25 +346,27 @@ get_remote_url() {
 TEMP_FILE_PARSED_COMMITS=""
 cleanup() {
     log "Cleaning up temporary files..."
-    if [ -n "$TEMP_FILE_PARSED_COMMITS" ] && [ -f "$TEMP_FILE_PARSED_COMMITS" ]; then
+    # Use -f to avoid error if file doesn't exist or already removed
+    if [ -n "$TEMP_FILE_PARSED_COMMITS" ]; then
         rm -f "$TEMP_FILE_PARSED_COMMITS"
     fi
     log "Cleanup complete."
 }
+# Ensure cleanup runs on script exit (0) or on error (non-zero)
 trap cleanup EXIT
 
-
+# --- Argument Parsing ---
 DRY_RUN=false
 SPECIFIC_TAG=""
 SINCE_TAG_OVERRIDE=""
 BUMP_TYPE_OVERRIDE=""
 CREATE_TAG=false
 PUSH_TAG=false
-PUSH_REMOTE="$DEFAULT_REMOTE"
-NO_CONFIRM=${RELEASE_ASSUME_YES:-false} # Default false, can be true via ENV var
+PUSH_REMOTE="<span class="math-inline">DEFAULT\_REMOTE"
+NO\_CONFIRM\=</span>{RELEASE_ASSUME_YES:-false} # Default false, can be true via ENV var
 CUSTOM_OUTPUT_FILE_PROVIDED=false # Flag to know if --output was used
 
-# Parse command line arguments
+# Using a loop compatible with Bash 3
 while [[ "$#" -gt 0 ]]; do
     case "$1" in
         --dry-run)
@@ -463,7 +465,7 @@ while [[ "$#" -gt 0 ]]; do
              ;;
         -h|--help)
             # Print usage from the top comment block
-            grep '^#' "$0" | cut -c 2- | sed '/^Script Version/,$d' | sed '/^$/d' # Remove empty lines
+            grep '^#' "<span class="math-inline">0" \| cut \-c 2\- \| sed '/^</span>/d' # Remove leading # and empty lines from help text
             exit 0
             ;;
         *)
@@ -486,24 +488,37 @@ log "Starting Release Management Script (Format: $FORMAT)..."
 if ! command_exists git; then
     error_exit "Git is not installed. Please install Git to continue."
 fi
-if ! git rev-parse --is-inside-work_tree > /dev/null 2>&1; then
+if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
     error_exit "Not a git repository. Please run this script from the root of a Git repository."
 fi
 
 if [ "$FORMAT" = "json" ]; then
     if ! command_exists jq; then
         error_exit "'jq' is not installed. Please install jq (e.g., brew install jq, apt-get install jq) to use the 'json' format."
+    }
+fi
+# Check for sed, needed for markdown escaping
+if [ "$FORMAT" = "markdown" ]; then
+    if ! command_exists sed; then
+         error_exit "'sed' is not installed. It's needed for the 'markdown' format."
     fi
 fi
 
-if $CREATE_TAG; then
-    if [ -n "$(git status --porcelain)" ]; then
+
+if <span class="math-inline">CREATE\_TAG; then
+if \[ \-n "</span>(git status --porcelain)" ]; then
         warn "Git working directory is not clean. Creating tags with uncommitted changes is not recommended."
-        if ! confirm_action "Proceed with tag creation despite uncommitted changes?" "$NO_CONFIRM"; then
-            error_exit "Aborting due to uncommitted changes."
+        # Allow bypass only if not in CI/non-interactive environment
+        if [ -t 0 ] || [ "$NO_CONFIRM" = true ] ; then
+            if ! confirm_action "Proceed with tag creation despite uncommitted changes?" "$NO_CONFIRM"; then
+                error_exit "Aborting due to uncommitted changes."
+            fi
+        else
+             error_exit "Aborting due to uncommitted changes (script running non-interactively)."
         fi
     fi
 fi
+
 
 # Ensure TAG_PREFIX is used if it was explicitly set but is empty
 if [ -z "$TAG_PREFIX" ]; then
@@ -513,9 +528,13 @@ fi
 
 # --- Determine Refs and Version ---
 log "Fetching latest tags from remote '$DEFAULT_REMOTE'..."
-git fetch "$DEFAULT_REMOTE" --tags --quiet || warn "Could not fetch tags from remote '$DEFAULT_REMOTE'. Using local tags."
-
-LATEST_TAG=$(get_last_tag)
+# Fetch specific tag if needed for --since, otherwise fetch all tags
+if [ -n "$SINCE_TAG_OVERRIDE" ]; then
+    # Attempt to fetch the ref if it looks like a remote tag
+    git fetch origin "refs/tags/$SINCE_TAG_OVERRIDE:refs/tags/$SINCE_TAG_OVERRIDE" --quiet || warn "Could not fetch specific tag '$SINCE_TAG_OVERRIDE' from remote '$DEFAULT_REMOTE'."
+fi
+git fetch "$DEFAULT_REMOTE" --tags --quiet || warn "Could not fetch tags from remote '<span class="math-inline">DEFAULT\_REMOTE'\. Using local tags\."
+LATEST\_TAG\=</span>(get_last_tag)
 COMMITS_SINCE_REF="$LATEST_TAG" # Default: commits since last tag
 NEW_VERSION="" # This will be the name used in release notes header
 COMPARE_URL="" # Initialize compare URL
@@ -540,28 +559,32 @@ if [ -n "$SPECIFIC_TAG" ]; then
                  fi
                  warn "Tag '$NEW_VERSION' exists locally but not on remote '$PUSH_REMOTE'."
             fi
-            if ! confirm_action "Tag '$NEW_VERSION' already exists. Continue (this will *not* overwrite the tag)?" "$NO_CONFIRM"; then
-                 error_exit "Aborting as tag '$NEW_VERSION' already exists."
-            fi
-            # If creating/pushing, set flags to false as we don't want to recreate/repush
-            CREATE_TAG=false
-            PUSH_TAG=false
-        fi
-    fi
+            if [ -t 0 ] || [ "$NO_CONFIRM" = true ] ; then
+                 if ! confirm_action "Tag '$NEW_VERSION' already exists. Continue (this will *not* overwrite the tag)?" "$NO_CONFIRM"; then
+                      error_exit "Aborting as tag '$NEW_VERSION' already exists."
+                 fi
+            else
+                 error_exit "Aborting as tag '<span class="math-inline">NEW\_VERSION' already exists \(script running non\-interactively\)\."
 fi
+\# If creating/pushing, set flags to false as we don't want to recreate/repush
+CREATE\_TAG\=false
+PUSH\_TAG\=false
+fi
+fi
+fi
+\# \-\-\- Get Commits and Parse \(Using Temp File for Bash 3 Scope\) \-\-\-
+\# Create a temporary file to store parsed commit data \- created early for trap
+TEMP\_FILE\_PARSED\_COMMITS\=</span>(mktemp /tmp/release_parsed_commits.XXXXXX) || error_exit "Failed to create temporary file."
 
-# --- Get Commits and Parse (Using Temp File for Bash 3 Scope) ---
 RAW_COMMITS=$(get_commits_since "$COMMITS_SINCE_REF")
 
-# Create a temporary file to store parsed commit data
-TEMP_FILE_PARSED_COMMITS=$(mktemp /tmp/release_parsed_commits.XXXXXX) || error_exit "Failed to create temporary file."
 
 if [ -z "$RAW_COMMITS" ]; then
     log "No new commits found since ${COMMITS_SINCE_REF:-the beginning of history}."
     # If no commits, and no specific tag is requested, determine a "no changes" version name
     if [ -z "$NEW_VERSION" ]; then
-        if [ -n "$LATEST_TAG" ]; then
-             NEW_VERSION="${LATEST_TAG}-no-changes"
+        if [ -n "<span class="math-inline">LATEST\_TAG" \]; then
+NEW\_VERSION\="</span>{LATEST_TAG}-no-changes"
         else
              NEW_VERSION="InitialRelease-no-changes"
         fi
@@ -573,23 +596,22 @@ if [ -z "$RAW_COMMITS" ]; then
     if $CREATE_TAG || $PUSH_TAG; then
         warn "Tag creation/push requested, but no new commits were found."
         # Decide if this should be an error or a warning depending on policy
-        # error_exit "Aborting tag creation/push as no new commits were found."
         # For now, just warn and proceed without creating/pushing if no NEW_VERSION was specified
         if [ -z "$SPECIFIC_TAG" ]; then
              log "No specific tag name provided, and no new conventional commits. Skipping tag creation/push."
              CREATE_TAG=false
              PUSH_TAG=false
         else
-             log "Specific tag '$SPECIFIC_TAG' provided. Will attempt to create/push this tag even without new conventional commits."
-        fi
-    fi
-# Else (if RAW_COMMITS is not empty)
+             log "Specific tag '<span class="math-inline">SPECIFIC\_TAG' provided\. Will attempt to create/push this tag even without new conventional commits\."
+fi
+fi
+\# Else \(if RAW\_COMMITS is not empty\)
 else
-    log "Processing commits..."
-    # Read RAW_COMMITS line by line and parse, writing to temp file
-    # Using process substitution <() to avoid pipe subshell issues with variables in Bash 3
-    while IFS=$'\t' read -r commit_hash commit_author commit_subject_line; do
-         # Pass the commit hash, author, and subject to parse_commit
+log "Processing commits\.\.\."
+\# Read RAW\_COMMITS line by line and parse, writing to temp file
+\# Using process substitution <\(\) to avoid pipe subshell issues with variables in Bash 3
+\# The output format of parse\_commit includes TypeDisplay\|Scope\|Subject\|Hash\|Author\|TypeRaw
+while IFS\=</span>'\t' read -r commit_hash commit_author commit_subject_line; do
          parsed_info=$(parse_commit "$commit_hash" "$commit_author" "$commit_subject_line")
          echo "$parsed_info" >> "$TEMP_FILE_PARSED_COMMITS"
     done < <(echo "$RAW_COMMITS") # Use process substitution to feed the loop
@@ -599,8 +621,8 @@ fi
 # --- Determine Release Type and Suggest Version ---
 # Determine release type only if there were commits parsed into the temp file
 RELEASE_TYPE="none"
-if [ -s "$TEMP_FILE_PARSED_COMMITS" ]; then # -s checks if file is not empty
-    RELEASE_TYPE=$(determine_release_type "$TEMP_FILE_PARSED_COMMITS")
+if [ -s "<span class="math-inline">TEMP\_FILE\_PARSED\_COMMITS" \]; then \# \-s checks if file is not empty
+RELEASE\_TYPE\=</span>(determine_release_type "$TEMP_FILE_PARSED_COMMITS")
 fi
 log "Determined Release Type: $RELEASE_TYPE"
 
@@ -617,13 +639,13 @@ if [ -z "$SPECIFIC_TAG" ] && [ -s "$TEMP_FILE_PARSED_COMMITS" ]; then
     # Only suggest a bump if the effective type is not 'none'
     if [ "$effective_bump_type" != "none" ]; then
         if [ -z "$LATEST_TAG" ]; then
-             log "No previous tag found. Suggesting initial version ${TAG_PREFIX}1.0.0 based on bump type '$effective_bump_type'."
-             # Conventional Commits suggests 1.0.0 for the first release with features/breaking changes
-             SUGGESTED_VERSION="${TAG_PREFIX}1.0.0"
+             log "No previous tag found. Suggesting initial version ${TAG_PREFIX}1.0.0 based on bump type '<span class="math-inline">effective\_bump\_type'\."
+\# Conventional Commits suggests 1\.0\.0 for the first release with features/breaking changes
+SUGGESTED\_VERSION\="</span>{TAG_PREFIX}1.0.0"
         else
-            log "Latest tag is '$LATEST_TAG'. Attempting to suggest next version..."
-            # increment_semver returns empty string on error
-            SUGGESTED_VERSION=$(increment_semver "$LATEST_TAG" "$effective_bump_type" "$TAG_PREFIX") || { warn "Could not automatically increment version from tag '$LATEST_TAG' with prefix '$TAG_PREFIX'."; SUGGESTED_VERSION="${LATEST_TAG}-next"; }
+            log "Latest tag is '<span class="math-inline">LATEST\_TAG'\. Attempting to suggest next version\.\.\."
+\# increment\_semver returns empty string on error
+SUGGESTED\_VERSION\=</span>(increment_semver "$LATEST_TAG" "$effective_bump_type" "$TAG_PREFIX") || { warn "Could not automatically increment version from tag '$LATEST_TAG' with prefix '<span class="math-inline">TAG\_PREFIX'\."; SUGGESTED\_VERSION\="</span>{LATEST_TAG}-next"; }
         fi
 
         if [ -n "$SUGGESTED_VERSION" ]; then
@@ -638,8 +660,8 @@ if [ -z "$SPECIFIC_TAG" ] && [ -s "$TEMP_FILE_PARSED_COMMITS" ]; then
         # If no bump suggested and no specific tag, NEW_VERSION might already be set to "no-changes" or similar
         # If not, set it based on latest tag + suffix
         if [ -z "$NEW_VERSION" ]; then
-            if [ -n "$LATEST_TAG" ]; then
-                NEW_VERSION="${LATEST_TAG}-no-bump"
+            if [ -n "<span class="math-inline">LATEST\_TAG" \]; then
+NEW\_VERSION\="</span>{LATEST_TAG}-no-bump"
             else
                 NEW_VERSION="UnversionedRelease" # Fallback
             fi
@@ -655,16 +677,16 @@ if [ -z "$NEW_VERSION" ]; then
 fi
 
 # --- Auto-detect REMOTE_URL_BASE if not set ---
-if [ -z "$REMOTE_URL_BASE" ]; then
-    log "Attempting to auto-detect remote URL base..."
-    DETECTED_REMOTE_URL=$(get_remote_url)
+if [ -z "<span class="math-inline">REMOTE\_URL\_BASE" \]; then
+log "Attempting to auto\-detect remote URL base\.\.\."
+DETECTED\_REMOTE\_URL\=</span>(get_remote_url)
     if [ -n "$DETECTED_REMOTE_URL" ]; then
         REMOTE_URL_BASE="$DETECTED_REMOTE_URL"
         log "Auto-detected remote URL base: $REMOTE_URL_BASE"
     else
         warn "Could not auto-detect remote URL base. Commit/compare links may use placeholder."
         REMOTE_URL_BASE="[YOUR_REPO_URL]" # Placeholder
-    fi
+    }
 fi
 
 # --- Generate Compare URL ---
@@ -673,12 +695,13 @@ if [ -n "$LATEST_TAG" ] && [ "$NEW_VERSION" != "$LATEST_TAG-no-bump" ] && [ "$NE
      # Simple check if both look like version tags (start with prefix or a digit)
      if [[ "$LATEST_TAG" =~ ^($TAG_PREFIX)?[0-9]+ ]] && [[ "$NEW_VERSION" =~ ^($TAG_PREFIX)?[0-9]+ ]]; then
         # Check if LATEST_TAG exists on remote for link
-        if git ls-remote --tags "$DEFAULT_REMOTE" "refs/tags/$LATEST_TAG" >/dev/null 2>&1; then
+        # Use --quiet to suppress warning if remote fetch fails
+        if git ls-remote --tags "$DEFAULT_REMOTE" "refs/tags/$LATEST_TAG" >/dev/null 2>&1 || git rev-parse --verify "refs/tags/$LATEST_TAG" >/dev/null 2>&1; then # Check remote or local existence
             # Basic assumption for compare URL format (GitHub/GitLab/etc.)
             COMPARE_URL="$REMOTE_URL_BASE/compare/$LATEST_TAG...$NEW_VERSION"
             log "Generated compare URL: $COMPARE_URL"
         else
-            warn "Could not find remote tag '$LATEST_TAG' for compare link. Skipping compare URL."
+            warn "Could not find local or remote tag '$LATEST_TAG' for compare link. Skipping compare URL."
         fi
      fi
 fi
@@ -690,10 +713,11 @@ output_content="" # For Markdown
 json_output=""    # For JSON
 has_content_in_sections=false # Flag for markdown, true if any category has commits
 
+
 if [ "$FORMAT" = "markdown" ]; then
     log "Generating release notes content (Markdown)..."
 
-    output_content="# Release Notes for $NEW_VERSION ($(date +'%Y-%m-%d'))\n"
+    output_content="# Release Notes for <span class="math-inline">NEW\_VERSION \(</span>(date +'%Y-%m-%d'))\n"
     if [ -n "$COMMITS_SINCE_REF" ]; then
         output_content+="*(Generated from commits since $COMMITS_SINCE_REF)*\n"
     fi
@@ -731,13 +755,27 @@ if [ "$FORMAT" = "markdown" ]; then
                  commit_link="$commit_hash" # No link if base URL unknown
             fi
 
-            local formatted_commit="- $subject ($commit_link)"
-            if [ -n "$scope" ]; then
-                formatted_commit="- **$scope:** $subject ($commit_link)"
+            # --- ESCAPE potential shell metacharacters in subject and scope for markdown ---
+            local escaped_subject
+            # Escape backticks (`) and dollar signs ($) which could cause command substitution or variable expansion
+            # Using sed: replace ` with \` and $ with \$
+            # Add escaping for \ itself, just in case it interacts with echo -e unexpectedly in subject/scope
+            escaped_subject=$(echo "$subject" | sed 's/[\`$\\]/\\&/g')
+
+            local escaped_scope=""
+            if [ -n "<span class="math-inline">scope" \]; then
+escaped\_scope\=</span>(echo "$scope" | sed 's/[\`$\\]/\\&/g') # Escape in scope too
+            fi
+            # --- END ESCAPE ---
+
+            local formatted_commit="- ${escaped_subject} (${commit_link})" # Use escaped subject
+            if [ -n "$escaped_scope" ]; then
+                formatted_commit="- **${escaped_scope}:** ${escaped_subject} (${commit_link})" # Use escaped scope and subject
             fi
             # Optional: Add author - formatted_commit+=" - $commit_author"
 
             # Append to the correct category variable (these vars are outside the read loop's subshell)
+            # Bash 3 note: These variable assignments accumulate the content correctly
             case "$type_display" in
                 "BREAKING CHANGES") commits_breaking_changes="${commits_breaking_changes}${formatted_commit}\n" ;;
                 "Features") commits_features="${commits_features}${formatted_commit}\n" ;;
@@ -758,19 +796,25 @@ if [ "$FORMAT" = "markdown" ]; then
         done < "$TEMP_FILE_PARSED_COMMITS" # Read from the temp file
 
         # Helper function to append section if it has content
+        # Bash 3 note: This uses local variables defined inside the main script logic
         append_section() {
             local title="$1"
             local commits_list_var_name="$2" # Name of the variable holding the list
 
-            # Use eval to get the variable value in Bash 3
+            # Use eval to get the variable value in Bash 3 safely
             local commits_list_content
-            eval "commits_list_content=\"\$$commits_list_var_name\""
+            eval "commits_list_content=\${${commits_list_var_name}}" # Use ${!varname} syntax for indirect reference if Bash > 4.3, eval needed for Bash 3
+            # Bash 3 eval syntax: eval "commits_list_content=\"\$$commits_list_var_name\"" is also an option, but simpler is better.
+            # The assignment `commits_breaking_changes="<span class="math-inline">\{commits\_breaking\_changes\}</span>{formatted_commit}\n"` already put the \n *literally* into the string.
+            # The issue with command not found was due to shell interpretation *within* the $(...) below,
+            # which the escaping of subject/scope aims to fix.
 
             if [ -n "$commits_list_content" ]; then
                 output_content+="### $title\n"
-                # Use echo -e to interpret the stored newlines and remove the trailing one for the section
-                output_content+=$(echo -e "${commits_list_content}" | sed '$ d') # Remove last newline
-                output_content+="\n\n" # Add two newlines after the section
+                 # Use echo -e to interpret the stored literal \n, then pipe to sed to remove the very last newline
+                local formatted_block
+                formatted_block=$(echo -e "${commits_list_content}" | sed '$d') || error_exit "Sed failed during markdown formatting."
+                output_content+="${formatted_block}\n\n" # Add formatted block and trailing newlines
                 has_content_in_sections=true
             fi
         }
@@ -851,8 +895,8 @@ elif [ "$FORMAT" = "json" ]; then
            }) | group_by(.type_display) | map({(.[0].type_display): .[] | del(.type_display)}) | add | if . == null then {} else . end
          }') || error_exit "Failed to generate JSON output using jq."
 
-    if [ "$json_output" = "{}" ] && [ ! -s "$TEMP_FILE_PARSED_COMMITS" ]; then
-        # Handle the case where there were no commits at all - generate a minimal JSON
+    # Handle the case where there were no commits at all - generate a minimal JSON
+    if [ ! -s "$TEMP_FILE_PARSED_COMMITS" ]; then
         json_output=$(jq -n \
             --arg releaseName "$NEW_VERSION" \
             --arg releaseDate "$(date +'%Y-%m-%d')" \
@@ -892,16 +936,19 @@ fi
 
 if $CREATE_TAG || $PUSH_TAG; then
     # Ensure NEW_VERSION is a valid tag name if we are creating/pushing
+    # This checks if the derived NEW_VERSION is one of the placeholders used when no specific tag was given and no bump happened
     if [ -z "$NEW_VERSION" ] || [[ "$NEW_VERSION" == *"-no-changes"* ]] || [[ "$NEW_VERSION" == *"-no-bump"* ]] || [[ "$NEW_VERSION" == "UnversionedRelease" ]] || [[ "$NEW_VERSION" == "UnnamedRelease" ]]; then
          if [ -n "$SUGGESTED_VERSION" ]; then
+              # FIX: Removed local keyword
               NEW_VERSION="$SUGGESTED_VERSION" # Fallback to suggested if possible
               log "Using suggested version '$NEW_VERSION' for tag creation/push."
          elif [ -n "$SPECIFIC_TAG" ]; then
+              # FIX: Removed local keyword (if it was mistakenly here)
               NEW_VERSION="$SPECIFIC_TAG" # Use the specific tag if provided
               log "Using specific tag '$NEW_VERSION' for tag creation/push."
          else
               error_exit "Cannot create or push tag. New version name '$NEW_VERSION' is not suitable for a tag, and no suggested or specific tag was available."
-         fi
+         }
     fi
 
     # Final check if the tag already exists locally BEFORE creating
@@ -910,49 +957,64 @@ if $CREATE_TAG || $PUSH_TAG; then
          CREATE_TAG=false # Don't try to create it
     fi
 
-
+    # Tag creation logic
     if $CREATE_TAG; then
         log "Attempting to create tag: $NEW_VERSION"
-        if confirm_action "Create Git tag '$NEW_VERSION' locally?" "$NO_CONFIRM"; then
-            if ! $DRY_RUN; then
-                 # Create annotated tag, using release notes content as tag message
-                 # Use the generated markdown content for the tag message
-                 if [ "$FORMAT" = "markdown" ]; then
-                    echo -e "$output_content" | git tag -a "$NEW_VERSION" -F /dev/stdin || error_exit "Failed to create Git tag '$NEW_VERSION'."
-                 else
-                     # If JSON was generated, create a minimal tag message
-                     git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION" || error_exit "Failed to create Git tag '$NEW_VERSION'."
-                     warn "Tag created with default message as output format was JSON. Consider using Markdown format for tag messages."
-                 fi
-                 log "Git tag '$NEW_VERSION' created locally."
+        if [ -t 0 ] || [ "$NO_CONFIRM" = true ] ; then # Check if interactive or confirmation skipped
+            if confirm_action "Create Git tag '$NEW_VERSION' locally?" "$NO_CONFIRM"; then
+                if ! $DRY_RUN; then
+                     # Create annotated tag, using release notes content as tag message (if markdown)
+                     if [ "$FORMAT" = "markdown" ]; then
+                        # Check if output_content was generated (it will be if FORMAT is markdown)
+                        if [ -n "$output_content" ]; then
+                            echo -e "$output_content" | git tag -a "$NEW_VERSION" -F /dev/stdin || error_exit "Failed to create Git tag '$NEW_VERSION'."
+                             log "Git tag '$NEW_VERSION' created locally with release notes message."
+                        else
+                            # Should not happen if FORMAT is markdown and there are commits/no commits handled
+                            git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION" || error_exit "Failed to create Git tag '$NEW_VERSION'."
+                            warn "Tag created with default message as markdown content was unexpectedly empty."
+                        fi
+                     else
+                         # If JSON was generated, create a minimal tag message
+                         git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION" || error_exit "Failed to create Git tag '$NEW_VERSION'."
+                         warn "Tag created with default message as output format was JSON. Consider using Markdown format for tag messages."
+                     fi
+                else
+                     log "DRY RUN: Git tag '$NEW_VERSION' would be created locally."
+                fi
             else
-                 log "DRY RUN: Git tag '$NEW_VERSION' would be created locally."
+                log "Tag creation aborted by user."
+                PUSH_TAG=false # Cannot push if not created
             fi
         else
-            log "Tag creation aborted by user."
-            PUSH_TAG=false # Cannot push if not created
+            error_exit "Tag creation aborted (script running non-interactively and confirmation not bypassed)."
         fi
     else
          log "Skipping tag creation (--create-tag not used or tag already exists)."
     fi
 
 
+    # Tag pushing logic
     if $PUSH_TAG; then
         log "Attempting to push tag: $NEW_VERSION to remote: $PUSH_REMOTE"
-        if confirm_action "Push Git tag '$NEW_VERSION' to remote '$PUSH_REMOTE'?" "$NO_CONFIRM"; then
-            if ! $DRY_RUN; then
-                # Check if remote exists
-                if ! git remote get-url "$PUSH_REMOTE" >/dev/null 2>&1; then
-                    error_exit "Remote '$PUSH_REMOTE' does not exist."
+        if [ -t 0 ] || [ "$NO_CONFIRM" = true ] ; then # Check if interactive or confirmation skipped
+            if confirm_action "Push Git tag '$NEW_VERSION' to remote '$PUSH_REMOTE'?" "$NO_CONFIRM"; then
+                if ! $DRY_RUN; then
+                    # Check if remote exists
+                    if ! git remote get-url "$PUSH_REMOTE" >/dev/null 2>&1; then
+                        error_exit "Remote '$PUSH_REMOTE' does not exist."
+                    fi
+                    # Push the specific tag
+                    git push "$PUSH_REMOTE" "$NEW_VERSION" || error_exit "Failed to push Git tag '$NEW_VERSION' to '$PUSH_REMOTE'."
+                    log "Git tag '$NEW_VERSION' pushed to '$PUSH_REMOTE'."
+                else
+                    log "DRY RUN: Git tag '$NEW_VERSION' would be pushed to '$PUSH_REMOTE'."
                 fi
-                # Push the specific tag
-                git push "$PUSH_REMOTE" "$NEW_VERSION" || error_exit "Failed to push Git tag '$NEW_VERSION' to '$PUSH_REMOTE'."
-                log "Git tag '$NEW_VERSION' pushed to '$PUSH_REMOTE'."
             else
-                log "DRY RUN: Git tag '$NEW_VERSION' would be pushed to '$PUSH_REMOTE'."
+                log "Tag push aborted by user."
             fi
         else
-            log "Tag push aborted by user."
+            error_exit "Tag push aborted (script running non-interactively and confirmation not bypassed)."
         fi
     else
         log "Skipping tag push (--push-tag not used)."
